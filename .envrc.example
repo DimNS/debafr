@@ -1,0 +1,16 @@
+# Это пример файла, содержащего переменные среды для настройки приложения.
+#
+# Скопируйте этот файл:
+#   cp .envrc.example .envrc
+#
+# Используйте direnv (https://direnv.net) для автоматической загрузки содержимого файла.
+
+export DEBAFR_DEV_MODE=true
+
+# Только имена файлов в одном каталоге с исполняемым файлом debafr
+export DEBAFR_PROJECT_NAME="project"
+export DEBAFR_FILENAME_COMPOSE_BLUE="compose.blue.yaml"
+export DEBAFR_FILENAME_COMPOSE_GREEN="compose.green.yaml"
+export DEBAFR_FILENAME_NGINX_CONF="nginx.conf"
+
+export DOCKER_API_VERSION="1.43"

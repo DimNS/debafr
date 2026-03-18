@@ -1,0 +1,48 @@
+{{define "function"}}
+{{- $f := .}}
+
+func {{.TestName}}(t *testing.T) {
+	{{- if .TestParameters}}
+	type args struct {
+		{{- range .TestParameters}}
+			{{Param .}} {{.Type}}
+		{{- end}}
+	}
+	{{- end}}
+	tests := []struct {
+		name string
+		{{- if .Receiver}}
+		srvFunc func(t *testing.T) {{.Receiver.Type}}
+		{{- end}}
+		{{- if .TestParameters}}
+			args args
+		{{- end}}
+		{{- range .TestResults}}
+			want {{.Type}}
+		{{- end}}
+		{{- if or .ReturnsError .TestResults}}
+			wantErr error
+		{{- end}}
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			{{- if .Receiver}}
+			srv := tt.srvFunc(t)
+
+			{{- end}}
+			{{- if .OnlyReturnsError}}
+			err := {{if .Receiver}}srv.{{end}}{{.Name}}({{if .TestParameters}}{{range .TestParameters}}tt.args.{{Param .}}, {{end}}{{end}})
+			assert.Equal(t, tt.wantErr, err)
+			{{- end}}
+			{{- if .TestResults}}
+			got, err := {{if .Receiver}}srv.{{end}}{{.Name}}({{if .TestParameters}}{{range .TestParameters}}tt.args.{{Param .}}, {{end}}{{end}})
+			assert.Equal(t, tt.wantErr, err)
+			assert.Equal(t, tt.want, got)
+			{{- end}}
+		})
+	}
+}
+
+{{end}}

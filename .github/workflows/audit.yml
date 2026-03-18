@@ -1,0 +1,51 @@
+name: audit
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.34.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          trivy-config: trivy.yaml
+        continue-on-error: true
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache-dependency-path: ./go.sum
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Run linter check
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.2.1
+          working-directory: ./
+
+      - name: Run vulnerability check
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          export PATH="$(pwd)/bin:${PATH}"
+          govulncheck -show verbose ./...
+        working-directory: ./
+        continue-on-error: true
+
+      - name: Run test
+        run: go test -race -failfast -count 1 ./...
+        working-directory: ./

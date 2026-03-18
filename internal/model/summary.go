@@ -1,0 +1,346 @@
+package model
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+
+	"debafr/internal/domain"
+)
+
+type SummaryConfig struct {
+	AppVersion string
+	DevMode    bool
+
+	ProjectName string
+
+	Width int
+
+	Theme *domain.Theme
+
+	FilenameComposeBlue  string
+	FilenameComposeGreen string
+	FilenameNginxConf    string
+}
+
+type Summary struct {
+	appVersion string
+	devMode    bool
+	theme      *domain.Theme
+
+	dirMaxWidth int
+
+	projectName string
+	mode        domain.Mode
+
+	requirementsCurlVersion          string
+	requirementsDockerVersion        string
+	requirementsDockerComposeVersion string
+	requirementsNginxVersion         string
+
+	filenameComposeBlue  string
+	filenameComposeGreen string
+	filenameNginxConf    string
+
+	currentDir          string
+	currentVersion      string
+	currentStrategy     domain.Strategy
+	currentPortBackend  string
+	currentPortFrontend string
+
+	nextVersion      string
+	nextStrategy     domain.Strategy
+	nextPortBackend  string
+	nextPortFrontend string
+
+	deployLaunching   *bool
+	deployHealthcheck *bool
+
+	switchingNginx *bool
+
+	shutdownStopping *bool
+
+	styles styles
+}
+
+type styles struct {
+	category lipgloss.Style
+	title    lipgloss.Style
+	text     lipgloss.Style
+}
+
+func NewSummary(cfg SummaryConfig) *Summary {
+	marginCompensation := 3
+
+	return &Summary{
+		appVersion: cfg.AppVersion,
+		devMode:    cfg.DevMode,
+		theme:      cfg.Theme,
+
+		dirMaxWidth: cfg.Width - marginCompensation,
+
+		projectName: cfg.ProjectName,
+		mode:        "???",
+
+		requirementsCurlVersion:          "???",
+		requirementsDockerVersion:        "???",
+		requirementsDockerComposeVersion: "???",
+		requirementsNginxVersion:         "???",
+
+		filenameComposeBlue:  cfg.FilenameComposeBlue,
+		filenameComposeGreen: cfg.FilenameComposeGreen,
+		filenameNginxConf:    cfg.FilenameNginxConf,
+
+		currentDir:          "???",
+		currentVersion:      "???",
+		currentStrategy:     "???",
+		currentPortBackend:  "???",
+		currentPortFrontend: "???",
+
+		nextVersion:      "???",
+		nextStrategy:     "???",
+		nextPortBackend:  "???",
+		nextPortFrontend: "???",
+
+		styles: styles{
+			category: lipgloss.NewStyle().
+				Foreground(cfg.Theme.ColorWhite).
+				Bold(true).
+				Transform(strings.ToUpper).
+				MarginTop(1),
+
+			title: lipgloss.NewStyle().
+				Foreground(cfg.Theme.ColorGreen).
+				Bold(true),
+
+			text: lipgloss.NewStyle().
+				Foreground(cfg.Theme.ColorYellow).
+				Bold(true),
+		},
+	}
+}
+
+func (s *Summary) View() string {
+	title := lipgloss.NewStyle().
+		Foreground(s.theme.ColorOrange).
+		Bold(true).
+		Transform(strings.ToUpper).
+		Render("🛠️ Debafr")
+	version := lipgloss.NewStyle().
+		Foreground(s.theme.ColorWhite).
+		Render(s.appVersion)
+	header := lipgloss.NewStyle().
+		MarginBottom(1).
+		Render(title + " v" + version)
+
+	devModeStr := s.styles.text.Render("off")
+	if s.devMode {
+		devModeStr = lipgloss.NewStyle().
+			Foreground(s.theme.ColorRed).
+			Bold(true).
+			Render("on")
+	}
+
+	var deploy string
+	if s.mode == domain.ModeInstall || s.mode == domain.ModeUpdate {
+		deploy = fmt.Sprintf(
+			"%s\n%s\n%s",
+			s.styles.category.Render("Deploy ("+s.nextVersion+")"),
+			s.styles.title.Render("Launching:   ")+s.boolToIcon(s.deployLaunching),
+			s.styles.title.Render("Healthcheck: ")+s.boolToIcon(s.deployHealthcheck),
+		)
+	}
+
+	var switchStrategy string
+	var shutdown string
+	if s.mode == domain.ModeUpdate {
+		switchStrategy = fmt.Sprintf(
+			"%s\n%s",
+			s.styles.category.Render("Switch strategy"),
+			s.styles.title.Render("Switching - Nginx: ")+s.boolToIcon(s.switchingNginx),
+		)
+
+		shutdown = fmt.Sprintf(
+			"%s\n%s",
+			s.styles.category.Render("Shutdown ("+s.currentVersion+")"),
+			s.styles.title.Render("Stopping the old version: ")+s.boolToIcon(s.shutdownStopping),
+		)
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left,
+		header,
+		s.styles.title.Render("DevMode:   ")+devModeStr,
+		s.styles.title.Render("Project:   ")+s.styles.text.Render(s.projectName),
+		s.styles.title.Render("Mode:      ")+s.styles.text.Render(s.mode.String()),
+
+		s.styles.category.Render("Requirements"),
+		s.styles.title.Render("curl:           ")+s.styles.text.Render(s.requirementsCurlVersion),
+		s.styles.title.Render("docker:         ")+s.styles.text.Render(s.requirementsDockerVersion),
+		s.styles.title.Render("docker compose: ")+s.styles.text.Render(s.requirementsDockerComposeVersion),
+		s.styles.title.Render("nginx:          ")+s.styles.text.Render(s.requirementsNginxVersion),
+
+		s.styles.category.Render("Directory"),
+		s.styles.text.Render(splitString(s.currentDir, s.dirMaxWidth)),
+
+		s.styles.category.Render("Files"),
+		s.styles.title.Render("compose.blue.yaml:    ")+s.styles.text.Render(s.filenameComposeBlue),
+		s.styles.title.Render("compose.green.yaml:   ")+s.styles.text.Render(s.filenameComposeGreen),
+		s.styles.title.Render("nginx.conf (symlink): ")+s.styles.text.Render(s.filenameNginxConf),
+
+		s.styles.category.Render("Deploy strategy"),
+		s.styles.title.Render("Version:         ")+s.styles.text.Render(s.currentVersion)+" >> "+s.styles.text.Render(s.nextVersion),
+		s.styles.title.Render("Strategy:        ")+s.styles.text.Render(s.currentStrategy.String())+" >> "+s.styles.text.Render(s.nextStrategy.String()),
+		s.styles.title.Render("Port - Backend:  ")+s.styles.text.Render(s.currentPortBackend)+" >> "+s.styles.text.Render(s.nextPortBackend),
+		s.styles.title.Render("Port - Frontend: ")+s.styles.text.Render(s.currentPortFrontend)+" >> "+s.styles.text.Render(s.nextPortFrontend),
+
+		deploy,
+		switchStrategy,
+		shutdown,
+	)
+}
+
+func (s *Summary) GetDevMode() bool {
+	return s.devMode
+}
+
+func (s *Summary) GetProjectName() string {
+	return s.projectName
+}
+
+func (s *Summary) GetMode() domain.Mode {
+	return s.mode
+}
+
+func (s *Summary) GetDir() string {
+	return s.currentDir
+}
+
+func (s *Summary) GetFilenameComposeBlue() string {
+	return s.filenameComposeBlue
+}
+
+func (s *Summary) GetFilenameComposeGreen() string {
+	return s.filenameComposeGreen
+}
+
+func (s *Summary) GetFilenameNginxConf() string {
+	return s.filenameNginxConf
+}
+
+func (s *Summary) GetCurrentVersion() string {
+	return s.currentVersion
+}
+
+func (s *Summary) GetCurrentStrategy() domain.Strategy {
+	return s.currentStrategy
+}
+
+func (s *Summary) GetCurrentPorts() (backend string, frontend string) {
+	return s.currentPortBackend, s.currentPortFrontend
+}
+
+func (s *Summary) GetNextVersion() string {
+	return s.nextVersion
+}
+
+func (s *Summary) GetNextStrategy() domain.Strategy {
+	return s.nextStrategy
+}
+
+func (s *Summary) GetNextPorts() (backend string, frontend string) {
+	return s.nextPortBackend, s.nextPortFrontend
+}
+
+func (s *Summary) UpdateDir(value string) {
+	s.currentDir = value
+}
+
+func (s *Summary) UpdateMode(value domain.Mode) {
+	s.mode = value
+}
+
+func (s *Summary) UpdateRequirementsCurlVersion(value string) {
+	s.requirementsCurlVersion = value
+}
+
+func (s *Summary) UpdateRequirementsDockerVersion(value string) {
+	s.requirementsDockerVersion = value
+}
+
+func (s *Summary) UpdateRequirementsDockerComposeVersion(value string) {
+	s.requirementsDockerComposeVersion = value
+}
+
+func (s *Summary) UpdateRequirementsNginxVersion(value string) {
+	s.requirementsNginxVersion = value
+}
+
+func (s *Summary) UpdateCurrentVersion(value string) {
+	s.currentVersion = value
+}
+
+func (s *Summary) UpdateCurrentStrategy(value domain.Strategy) {
+	s.currentStrategy = value
+}
+
+func (s *Summary) UpdateCurrentPorts(backend string, frontend string) {
+	s.currentPortBackend = backend
+	s.currentPortFrontend = frontend
+}
+
+func (s *Summary) UpdateNextVersion(value string) {
+	s.nextVersion = value
+}
+
+func (s *Summary) UpdateNextStrategy(value domain.Strategy) {
+	s.nextStrategy = value
+}
+
+func (s *Summary) UpdateNextPorts(backend string, frontend string) {
+	s.nextPortBackend = backend
+	s.nextPortFrontend = frontend
+}
+
+func (s *Summary) UpdateDeployLaunching(value bool) {
+	s.deployLaunching = &value
+}
+
+func (s *Summary) UpdateDeployHealthcheck(value bool) {
+	s.deployHealthcheck = &value
+}
+
+func (s *Summary) UpdateSwitchingNginx(value bool) {
+	s.switchingNginx = &value
+}
+
+func (s *Summary) UpdateShutdownStopping(value bool) {
+	s.shutdownStopping = &value
+}
+
+func (s *Summary) boolToIcon(b *bool) string {
+	if b == nil {
+		return s.styles.text.Render("???")
+	}
+
+	if *b {
+		return s.theme.StyleGreen.Render("✅")
+	}
+
+	return s.theme.StyleRed.Render("❌")
+}
+
+func splitString(s string, width int) string {
+	var result []string
+
+	for len(s) > width {
+		result = append(result, s[:width])
+		s = s[width:]
+	}
+
+	if len(s) > 0 {
+		result = append(result, s)
+	}
+
+	return strings.Join(result, "\n")
+}

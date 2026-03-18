@@ -1,0 +1,45 @@
+name: capuchin
+
+services:
+  capuchin_db:
+    image: postgres:16.4
+    container_name: capuchin_postgres
+    volumes:
+      - capuchin_db_data:/var/lib/postgresql/data
+    networks:
+      - capuchin-network
+
+  capuchin_blue_api:
+    image: ghcr.io/capuchinapp/cloud/api:${APP_VERSION}
+    container_name: capuchin_blue_${APP_VERSION}_api
+    labels:
+      - "app.project.name=capuchin"
+      - "app.service.name=api"
+      - "app.service.type=backend"
+      - "app.deployment.strategy=blue"
+      - "app.version=${APP_VERSION}"
+    ports:
+      - "3001:3000"
+    networks:
+      - capuchin-network
+
+  capuchin_blue_ui:
+    image: ghcr.io/capuchinapp/cloud/ui:${APP_VERSION}
+    container_name: capuchin_blue_${APP_VERSION}_ui
+    labels:
+      - "app.project.name=capuchin"
+      - "app.service.name=ui"
+      - "app.service.type=frontend"
+      - "app.deployment.strategy=blue"
+      - "app.version=${APP_VERSION}"
+    ports:
+      - "3002:80" # important for running (127.0.0.1) without nginx: +1 from the api port
+    networks:
+      - capuchin-network
+
+volumes:
+  capuchin_db_data:
+
+networks:
+  capuchin-network:
+    external: true

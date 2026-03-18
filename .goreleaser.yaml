@@ -1,0 +1,44 @@
+version: 2
+
+project_name: debafr
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X 'main.appVersion={{.Version}}'
+    binary: debafr
+    main: ./main.go
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}_{{.Arch}}" # debafr_v1.0.0_linux_amd64.tar.gz
+
+changelog:
+  disable: "{{ .Env.CREATE_CHANGELOG }}"
+  use: git
+  format: "{{ .SHA }} {{ .Message }}"
+  sort: asc
+  abbrev: -1
+  groups:
+    - title: "Features"
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: "Bug fixes"
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: "Style"
+      regexp: '^.*?style(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: "Chore"
+      regexp: '^.*?chore(\([[:word:]]+\))??!?:.+$'
+      order: 3
+    - title: "Others"
+      order: 999

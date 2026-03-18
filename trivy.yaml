@@ -1,0 +1,16 @@
+exit-code: 1
+format: "table"
+severity:
+  - MEDIUM
+  - HIGH
+  - CRITICAL
+scan:
+  scanners:
+   - vuln
+   - secret
+   - misconfig
+   - license
+  skip-files:
+    - .envrc
+vulnerability:
+  ignore-unfixed: true

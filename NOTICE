@@ -1,0 +1,51 @@
+The following components are included in this product:
+
+$env
+https://github.com/caarlos0/env
+Copyright (c) 2015-2024 Carlos Alexandro Becker
+See source code for license details.
+
+Bubbles
+https://github.com/charmbracelet/bubbles
+Copyright (c) 2020-2023 Charmbracelet, Inc
+See source code for license details.
+
+Bubble Tea
+https://github.com/charmbracelet/bubbletea
+Copyright (c) 2020-2023 Charmbracelet, Inc
+See source code for license details.
+
+Huh?
+https://github.com/charmbracelet/huh
+Copyright (c) 2023 Charm
+See source code for license details.
+
+Lip Gloss
+https://github.com/charmbracelet/lipgloss
+Copyright (c) 2021-2023 Charmbracelet, Inc
+See source code for license details.
+
+The Moby Project
+https://github.com/docker/docker
+Copyright 2012-2017 Docker, Inc.
+See source code for license details.
+
+Versioning Library for Go
+https://github.com/hashicorp/go-version
+Copyright (c) 2014 HashiCorp, Inc.
+See source code for license details.
+
+Testify - Thou Shalt Write Tests
+https://github.com/stretchr/testify
+Copyright (c) 2012-2020 Mat Ryer, Tyler Bunnell and contributors.
+See source code for license details.
+
+Go terminal/console support
+https://golang.org/x/term
+Copyright 2009 The Go Authors.
+See source code for license details.
+
+YAML support for the Go language
+https://gopkg.in/yaml.v3
+Copyright (c) 2006-2011 Kirill Simonov
+See source code for license details.
