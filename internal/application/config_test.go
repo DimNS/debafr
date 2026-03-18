@@ -15,8 +15,10 @@ func TestLoadConfiguration(t *testing.T) {
 		wantErr    error
 	}{
 		{
-			name:       "Should load configuration from env with default values",
-			setEnvFunc: func() {},
+			name: "Should load configuration from env with default values",
+			setEnvFunc: func() {
+				t.Setenv("DEBAFR_PROJECT_NAME", "capuchin")
+			},
 			want: &Configuration{
 				DevMode: func() bool {
 					// Это надо из-за .envrc и запуска тестов через make test
