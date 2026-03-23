@@ -45,11 +45,6 @@ func (c *Exec) Init() tea.Cmd {
 }
 
 func (c *Exec) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var (
-		cmd  tea.Cmd
-		cmds []tea.Cmd
-	)
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.String() == "enter" && c.status != nil && *c.status {
@@ -68,6 +63,7 @@ func (c *Exec) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case domain.ExecResultStatusSuccess:
 			c.execCfg.SuccessFunc()
 			c.status = func() *bool { b := true; return &b }()
+		default:
 		}
 
 		if c.result.Status == domain.ExecResultStatusError {
@@ -89,13 +85,18 @@ func (c *Exec) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			c.pager.SetContent(c.result.Output + "\n" + c.theme.TextPressEnterToContinue)
 			c.pager.GotoBottom()
 		}
+
+	default:
 	}
 
-	c.pager, cmd = c.pager.Update(msg)
-	cmds = append(cmds, cmd)
+	var (
+		cmdPager, cmdSpinner tea.Cmd
+		cmds                 []tea.Cmd
+	)
 
-	c.spinner, cmd = c.spinner.Update(msg)
-	cmds = append(cmds, cmd)
+	c.pager, cmdPager = c.pager.Update(msg)
+	c.spinner, cmdSpinner = c.spinner.Update(msg)
+	cmds = []tea.Cmd{cmdPager, cmdSpinner}
 
 	return c, tea.Batch(cmds...)
 }

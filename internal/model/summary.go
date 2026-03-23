@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -212,8 +213,13 @@ func (s *Summary) GetMode() domain.Mode {
 	return s.mode
 }
 
-func (s *Summary) GetDir() string {
-	return s.currentDir
+func (s *Summary) GetRoot() (*os.Root, error) {
+	root, err := os.OpenRoot(s.currentDir)
+	if err != nil {
+		return nil, fmt.Errorf("open root: %v", err)
+	}
+
+	return root, nil
 }
 
 func (s *Summary) GetFilenameComposeBlue() string {

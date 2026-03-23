@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 
@@ -22,7 +23,10 @@ func NewComplete(theme *domain.Theme) *Complete {
 }
 
 func (c *Complete) Init() tea.Cmd {
-	out, err := exec.Command(PathDocker, "ps").CombinedOutput()
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
+
+	out, err := exec.CommandContext(ctx, PathDocker, "ps").CombinedOutput()
 	if err != nil {
 		outString := string(out)
 

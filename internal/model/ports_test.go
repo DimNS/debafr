@@ -1,6 +1,7 @@
 package model
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,7 +22,7 @@ func Test_findPorts(t *testing.T) {
 		{
 			name: "Should find ports - blue strategy",
 			args: args{
-				pathFile:    "testdata/ports/compose.blue.yaml",
+				pathFile:    "compose.blue.yaml",
 				projectName: "capuchin",
 			},
 			wantBackend:  "3001",
@@ -31,7 +32,7 @@ func Test_findPorts(t *testing.T) {
 		{
 			name: "Should find ports - green strategy",
 			args: args{
-				pathFile:    "testdata/ports/compose.green.yaml",
+				pathFile:    "compose.green.yaml",
 				projectName: "capuchin",
 			},
 			wantBackend:  "3011",
@@ -41,7 +42,13 @@ func Test_findPorts(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotBackend, gotFrontend, err := findPorts(tt.args.pathFile, tt.args.projectName)
+			root, err := os.OpenRoot("testdata/ports")
+			if err != nil {
+				t.Errorf("New: %v", err)
+			}
+			defer root.Close()
+
+			gotBackend, gotFrontend, err := findPorts(root, tt.args.pathFile, tt.args.projectName)
 			assert.Equal(t, tt.wantErr, err)
 			assert.Equal(t, tt.wantBackend, gotBackend)
 			assert.Equal(t, tt.wantFrontend, gotFrontend)

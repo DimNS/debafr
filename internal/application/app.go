@@ -1,9 +1,11 @@
 package application
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -20,6 +22,8 @@ const (
 
 	compensationWidth  = 4
 	compensationHeight = 2
+
+	defaultTimeout = 10 * time.Second
 )
 
 type App struct {
@@ -41,7 +45,7 @@ func New(appVersion string) (*App, error) {
 		return nil, fmt.Errorf("load configuration: %v", err)
 	}
 
-	physicalWidth, physicalHeight, err := term.GetSize(int(os.Stdout.Fd()))
+	physicalWidth, physicalHeight, err := term.GetSize(int(os.Stdout.Fd())) //nolint:gosec // ignore
 	if err != nil {
 		return nil, fmt.Errorf("get terminal size: %v", err)
 	}
@@ -112,6 +116,9 @@ func (a *App) Init() tea.Cmd {
 }
 
 func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
 	var cmd tea.Cmd
 
 	a.currentCmd, cmd = a.currentCmd.Update(msg)
@@ -120,16 +127,17 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case model.NextCmdMsg:
 		a.currentCmd = msg.NextCmd
 		return a, a.currentCmd.Init()
+
 	case tea.KeyMsg:
 		if key.Matches(msg, a.keys.Quit) { //nolint:nestif // ignore
 			if a.summary.GetDevMode() {
-				output, err := exec.Command("/usr/bin/docker", "rm", "-f", "debafr_app").CombinedOutput()
+				output, err := exec.CommandContext(ctx, "/usr/bin/docker", "rm", "-f", "debafr_app").CombinedOutput()
 				if err != nil {
 					fmt.Println(err)
 				}
 				fmt.Println(string(output))
 
-				output, err = exec.Command("/usr/bin/docker", "rmi", "-f", "nginx:alpine").CombinedOutput()
+				output, err = exec.CommandContext(ctx, "/usr/bin/docker", "rmi", "-f", "nginx:alpine").CombinedOutput()
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -138,6 +146,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return a, tea.Quit
 		}
+
+	default:
 	}
 
 	return a, cmd

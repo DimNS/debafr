@@ -1,7 +1,7 @@
 version: "2"
 run:
   concurrency: 4
-  go: 1.24.10
+  go: 1.25.8
 linters:
   default: none
   enable:
@@ -44,10 +44,12 @@ linters:
     - importas
     - inamedparam
     - ineffassign
+    - iotamixing
     - maintidx
     - makezero
     - misspell
     - mnd
+    - modernize
     - musttag
     - nakedret
     - nestif
@@ -72,6 +74,7 @@ linters:
     - tparallel
     - unconvert
     - unparam
+    - unqueryvet
     - unused
     - usestdlibvars
     - usetesting

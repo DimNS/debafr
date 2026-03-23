@@ -75,6 +75,8 @@ func (d *Docker) GetCurrentDeploy(needProjectName string) (currVersion string, c
 			strategies[domain.StrategyBlue] = struct{}{}
 		case domain.StrategyGreen.String():
 			strategies[domain.StrategyGreen] = struct{}{}
+		default:
+			continue
 		}
 	}
 
@@ -196,8 +198,6 @@ func statusToDomain(status string) domain.ContainerStateStatus {
 		return domain.ContainerStateStatusRestarting
 	case "removing":
 		return domain.ContainerStateStatusRemoving
-	case "exited":
-		return domain.ContainerStateStatusExited
 	case "dead":
 		return domain.ContainerStateStatusDead
 	default:

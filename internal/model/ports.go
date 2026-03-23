@@ -3,7 +3,6 @@ package model
 import (
 	"fmt"
 	"os"
-	"path"
 	"slices"
 	"strings"
 
@@ -103,22 +102,26 @@ func (c *Ports) View() string {
 }
 
 func (c *Ports) processing() tea.Msg {
-	dir := c.summary.GetDir()
+	root, err := c.summary.GetRoot()
+	if err != nil {
+		return domain.ExecResult{
+			Status: domain.ExecResultStatusError,
+			Err:    err,
+			Output: "failed to open root",
+		}
+	}
+	defer root.Close()
+
 	projectName := c.summary.GetProjectName()
 
-	pathBlue := path.Join(dir, c.summary.GetFilenameComposeBlue())
-	pathGreen := path.Join(dir, c.summary.GetFilenameComposeGreen())
-
-	var err error
-
-	c.ports.blue.backend, c.ports.blue.frontend, err = findPorts(pathBlue, projectName)
+	c.ports.blue.backend, c.ports.blue.frontend, err = findPorts(root, c.summary.GetFilenameComposeBlue(), projectName)
 	if err != nil {
 		return StatusError{
 			fmt.Errorf("failed to find blue ports: %v", err),
 		}
 	}
 
-	c.ports.green.backend, c.ports.green.frontend, err = findPorts(pathGreen, projectName)
+	c.ports.green.backend, c.ports.green.frontend, err = findPorts(root, c.summary.GetFilenameComposeGreen(), projectName)
 	if err != nil {
 		return StatusError{
 			fmt.Errorf("failed to find green ports: %v", err),
@@ -128,8 +131,8 @@ func (c *Ports) processing() tea.Msg {
 	return StatusDone{true}
 }
 
-func findPorts(pathFile string, projectName string) (backend string, frontend string, err error) {
-	data, err := os.ReadFile(pathFile)
+func findPorts(root *os.Root, pathFile string, projectName string) (backend string, frontend string, err error) {
+	data, err := root.ReadFile(pathFile)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to read file: %v", err)
 	}

@@ -35,7 +35,7 @@ jobs:
       - name: Run linter check
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v2.2.1
+          version: v2.11.4
           working-directory: ./
 
       - name: Run vulnerability check

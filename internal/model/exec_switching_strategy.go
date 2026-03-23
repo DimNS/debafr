@@ -1,10 +1,10 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
 
 	"debafr/internal/domain"
@@ -14,6 +14,17 @@ const (
 	fileMode = 0644
 )
 
+type switchConfig struct {
+	root             *os.Root
+	filePath         string
+	currPortBackend  string
+	currPortFrontend string
+	nextPortBackend  string
+	nextPortFrontend string
+	cmdTest          *exec.Cmd
+	cmdReload        *exec.Cmd
+}
+
 func NewExecSwitchingStrategy(dic DIC) *Exec {
 	summary := dic.GetSummary()
 
@@ -21,20 +32,39 @@ func NewExecSwitchingStrategy(dic DIC) *Exec {
 		Name: "Switching strategy",
 
 		StartFunc: func() domain.ExecResult {
-			dir := summary.GetDir()
+			ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+			defer cancel()
+
+			root, err := summary.GetRoot()
+			if err != nil {
+				return domain.ExecResult{
+					Status: domain.ExecResultStatusError,
+					Err:    err,
+					Output: "failed to open root",
+				}
+			}
+			defer root.Close()
+
 			devMode := dic.GetDevMode()
 			currPortBackend, currPortFrontend := summary.GetCurrentPorts()
 			nextPortBackend, nextPortFrontend := summary.GetNextPorts()
 
-			pathNginx := path.Join(dir, summary.GetFilenameNginxConf())
-
-			cmdTest := exec.Command(PathNginx, "-t")
-			cmdReload := exec.Command(PathNginx, "-s", "reload")
+			cmdTest := exec.CommandContext(ctx, PathNginx, "-t")
+			cmdReload := exec.CommandContext(ctx, PathNginx, "-s", "reload")
 			if devMode {
-				cmdTest = exec.Command(PathDocker, "exec", TestContainerName, PathNginx, "-t")
-				cmdReload = exec.Command(PathDocker, "exec", TestContainerName, PathNginx, "-s", "reload")
+				cmdTest = exec.CommandContext(ctx, PathDocker, "exec", TestContainerName, PathNginx, "-t")
+				cmdReload = exec.CommandContext(ctx, PathDocker, "exec", TestContainerName, PathNginx, "-s", "reload")
 			}
-			resNginx := switchNginx(pathNginx, currPortBackend, currPortFrontend, nextPortBackend, nextPortFrontend, cmdTest, cmdReload)
+			resNginx := switchNginx(switchConfig{
+				root:             root,
+				filePath:         summary.GetFilenameNginxConf(),
+				currPortBackend:  currPortBackend,
+				currPortFrontend: currPortFrontend,
+				nextPortBackend:  nextPortBackend,
+				nextPortFrontend: nextPortFrontend,
+				cmdTest:          cmdTest,
+				cmdReload:        cmdReload,
+			})
 			if resNginx.Status == domain.ExecResultStatusError {
 				return resNginx
 			}
@@ -60,16 +90,8 @@ func NewExecSwitchingStrategy(dic DIC) *Exec {
 	})
 }
 
-func switchNginx(
-	filePath string,
-	currPortBackend string,
-	currPortFrontend string,
-	nextPortBackend string,
-	nextPortFrontend string,
-	cmdTest *exec.Cmd,
-	cmdReload *exec.Cmd,
-) domain.ExecResult {
-	content, err := os.ReadFile(filePath)
+func switchNginx(cfg switchConfig) domain.ExecResult {
+	content, err := cfg.root.ReadFile(cfg.filePath)
 	if err != nil {
 		return domain.ExecResult{
 			Status: domain.ExecResultStatusError,
@@ -81,11 +103,11 @@ func switchNginx(
 
 	const proxyPass = "proxy_pass http://127.0.0.1:" //#nosec G101 -- This is a false positive
 
-	currBackendString := proxyPass + currPortBackend
-	nextBackendString := proxyPass + nextPortBackend
+	currBackendString := proxyPass + cfg.currPortBackend
+	nextBackendString := proxyPass + cfg.nextPortBackend
 
-	currFrontendString := proxyPass + currPortFrontend
-	nextFrontendString := proxyPass + nextPortFrontend
+	currFrontendString := proxyPass + cfg.currPortFrontend
+	nextFrontendString := proxyPass + cfg.nextPortFrontend
 
 	if !strings.Contains(fileContent, "#"+currBackendString) {
 		fileContent = strings.Replace(fileContent, currBackendString, "#"+currBackendString, 1)
@@ -103,7 +125,7 @@ func switchNginx(
 		fileContent = strings.Replace(fileContent, "#"+nextFrontendString, nextFrontendString, 1)
 	}
 
-	err = os.WriteFile(filePath, []byte(fileContent), fileMode) //#nosec G306 -- This is a false positive
+	err = cfg.root.WriteFile(cfg.filePath, []byte(fileContent), fileMode) //#nosec G306 -- This is a false positive
 	if err != nil {
 		return domain.ExecResult{
 			Status: domain.ExecResultStatusError,
@@ -111,7 +133,7 @@ func switchNginx(
 		}
 	}
 
-	outputTest, err := cmdTest.CombinedOutput()
+	outputTest, err := cfg.cmdTest.CombinedOutput()
 	if err != nil {
 		return domain.ExecResult{
 			Status: domain.ExecResultStatusError,
@@ -120,7 +142,7 @@ func switchNginx(
 		}
 	}
 
-	outputReload, err := cmdReload.CombinedOutput()
+	outputReload, err := cfg.cmdReload.CombinedOutput()
 	if err != nil {
 		return domain.ExecResult{
 			Status: domain.ExecResultStatusError,

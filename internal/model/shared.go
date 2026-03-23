@@ -1,6 +1,10 @@
 package model
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 const (
 	TestContainerName = "debafr_app"
@@ -8,6 +12,8 @@ const (
 	PathDocker = "/usr/bin/docker"
 	PathCurl   = "/usr/bin/curl"
 	PathNginx  = "/usr/sbin/nginx"
+
+	DefaultTimeout = 30 * time.Second
 )
 
 type NextCmdMsg struct {

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,7 +16,11 @@ func NewExecLaunchingDeploy(dic DIC) *Exec {
 		Name: "Deploying",
 
 		StartFunc: func() domain.ExecResult {
-			command := exec.Command( //#nosec G204 -- This is a false positive
+			ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+			defer cancel()
+
+			command := exec.CommandContext( //#nosec G204 -- This is a false positive
+				ctx,
 				PathDocker,
 				"compose",
 				"-f",
@@ -26,7 +31,8 @@ func NewExecLaunchingDeploy(dic DIC) *Exec {
 			command.Env = append(os.Environ(), "APP_VERSION="+summary.GetNextVersion())
 
 			if dic.GetDevMode() {
-				command = exec.Command(
+				command = exec.CommandContext(
+					ctx,
 					PathDocker,
 					"run",
 					"-d",
