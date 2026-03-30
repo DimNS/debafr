@@ -1,0 +1,19 @@
+[app]
+name = "myapp"
+
+[files]
+compose_blue = "myapp_compose.blue.yaml"
+compose_green = "myapp_compose.green.yaml"
+nginx_conf = "myapp_nginx.conf"
+
+[binpaths]
+docker = "docker"
+curl = "curl"
+nginx = "nginx"
+
+[timeouts]
+default = "60s"
+
+[healthcheck]
+max_retries = 5
+retry_delay = "5s"

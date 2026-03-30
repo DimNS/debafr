@@ -12,7 +12,6 @@ func Test_findPorts(t *testing.T) {
 		name     string
 		pathFile string
 		ports    []LocationPort
-		wantErr  error
 	}{
 		{
 			name:     "Should find ports - blue strategy",
@@ -34,7 +33,6 @@ func Test_findPorts(t *testing.T) {
 					NextPort:    "3012",
 				},
 			},
-			wantErr: nil,
 		},
 		{
 			name:     "Should find ports - green strategy",
@@ -56,7 +54,6 @@ func Test_findPorts(t *testing.T) {
 					NextPort:    "3002",
 				},
 			},
-			wantErr: nil,
 		},
 	}
 	for _, tt := range tests {
@@ -72,8 +69,7 @@ func Test_findPorts(t *testing.T) {
 				t.Errorf("Failed to read nginx config: %v", err)
 			}
 
-			ports, err := parseNginxLocationPorts(string(content))
-			assert.Equal(t, tt.wantErr, err)
+			ports := parseNginxLocationPorts(string(content))
 			assert.Equal(t, tt.ports, ports)
 		})
 	}

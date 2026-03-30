@@ -340,7 +340,7 @@ func (s *Summary) portsView() string {
 	}
 
 	for _, p := range s.ports {
-		loc := s.styles.title.Render(fmt.Sprintf("%s: ", p.Location))
+		loc := s.styles.title.Render(p.Location + ": ")
 		cp := s.styles.text.Render(p.CurrentPort)
 		np := s.styles.text.Render(p.NextPort)
 		lines = append(lines,

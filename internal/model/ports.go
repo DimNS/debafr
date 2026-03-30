@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -104,23 +105,17 @@ func (c *Ports) processing() tea.Msg {
 		}
 	}
 
-	c.ports, err = parseNginxLocationPorts(string(content))
-	if err != nil {
-		return StatusError{
-			fmt.Errorf("failed to parse nginx config: %v", err),
-		}
-	}
-
+	c.ports = parseNginxLocationPorts(string(content))
 	if len(c.ports) == 0 {
 		return StatusError{
-			fmt.Errorf("no location ports found in nginx config"),
+			errors.New("no location ports found in nginx config"),
 		}
 	}
 
 	return StatusDone{true}
 }
 
-func parseNginxLocationPorts(content string) ([]LocationPort, error) {
+func parseNginxLocationPorts(content string) []LocationPort { //nolint:gocognit // it's ok
 	var result []LocationPort
 
 	locMatches := reLocationBlock.FindAllStringSubmatchIndex(content, -1)
@@ -180,5 +175,5 @@ func parseNginxLocationPorts(content string) ([]LocationPort, error) {
 		}
 	}
 
-	return result, nil
+	return result
 }

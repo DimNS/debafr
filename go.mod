@@ -9,7 +9,6 @@ require (
 	github.com/charmbracelet/huh v0.6.0
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/docker/docker v28.0.1+incompatible
-	github.com/goccy/go-yaml v1.18.0
 	github.com/hashicorp/go-version v1.7.0
 	github.com/pelletier/go-toml/v2 v2.3.0
 	github.com/stretchr/testify v1.10.0

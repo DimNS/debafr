@@ -1,13 +1,15 @@
 package application
 
 import (
-	"debafr/internal/domain"
+	"errors"
 	"fmt"
 	"os"
 	"time"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/pelletier/go-toml/v2"
+
+	"debafr/internal/domain"
 )
 
 const (
@@ -47,17 +49,31 @@ type BinPathsConfig struct {
 }
 
 type TimeoutsConfig struct {
-	Default time.Duration `toml:"default"`
+	Default Duration `toml:"default"`
 }
 
 type HealthcheckConfig struct {
-	MaxRetries int           `toml:"max_retries"`
-	RetryDelay time.Duration `toml:"retry_delay"`
+	MaxRetries int      `toml:"max_retries"`
+	RetryDelay Duration `toml:"retry_delay"`
+}
+
+type Duration time.Duration
+
+func (d *Duration) UnmarshalText(text []byte) error {
+	if len(text) == 0 {
+		return nil
+	}
+	v, err := time.ParseDuration(string(text))
+	if err != nil {
+		return fmt.Errorf("parse duration: %w", err)
+	}
+	*d = Duration(v)
+	return nil
 }
 
 func (tc *TomlConfig) Validate() error {
 	if tc.App.Name == "" {
-		return fmt.Errorf("app name is empty")
+		return errors.New("app name is empty")
 	}
 
 	return nil
@@ -76,22 +92,22 @@ func (tc *TomlConfig) GetDomainConfig() domain.AppConfig {
 			Nginx:  tc.BinPaths.Nginx,
 		},
 		Timeouts: domain.TimeoutsConfig{
-			Default: tc.Timeouts.Default,
+			Default: time.Duration(tc.Timeouts.Default),
 		},
 		Healthcheck: domain.HealthcheckConfig{
 			MaxRetries: tc.Healthcheck.MaxRetries,
-			RetryDelay: tc.Healthcheck.RetryDelay,
+			RetryDelay: time.Duration(tc.Healthcheck.RetryDelay),
 		},
 	}
 }
 
-func LoadConfiguration() (*Configuration, error) {
+func LoadConfiguration(tomlName string) (*Configuration, error) {
 	var config Configuration
 	if err := env.Parse(&config); err != nil {
 		return nil, fmt.Errorf("parse configuration: %v", err)
 	}
 
-	tomlConfig, err := loadTomlConfig(".debafr.toml")
+	tomlConfig, err := loadTomlConfig(tomlName)
 	if err != nil {
 		return nil, fmt.Errorf("load toml config: %v", err)
 	}
@@ -148,13 +164,13 @@ func SetDefaults(cfg *TomlConfig) {
 		cfg.BinPaths.Nginx = "/usr/sbin/nginx"
 	}
 	if cfg.Timeouts.Default == 0 {
-		cfg.Timeouts.Default = defaultCmdTimeout
+		cfg.Timeouts.Default = Duration(defaultCmdTimeout)
 	}
 	if cfg.Healthcheck.MaxRetries == 0 {
 		cfg.Healthcheck.MaxRetries = defaultMaxRetries
 	}
 	if cfg.Healthcheck.RetryDelay == 0 {
-		cfg.Healthcheck.RetryDelay = defaultRetryDelay
+		cfg.Healthcheck.RetryDelay = Duration(defaultRetryDelay)
 	}
 	if cfg.Files.ComposeBlue == "" {
 		cfg.Files.ComposeBlue = "compose.blue.yaml"

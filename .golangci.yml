@@ -81,9 +81,6 @@ linters:
     - whitespace
     - wrapcheck
   settings:
-    mnd:
-      disabled-checks:
-        - Magicnumber
     cyclop:
       max-complexity: 15
     depguard:

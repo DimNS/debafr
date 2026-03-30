@@ -85,8 +85,9 @@ func (c *CurrentDeploy) getCurrentDeploy() tea.Msg {
 		return StatusDone{true}
 	}
 
-	c.version = "---"
-	c.strategy = "---"
+	const empty = "---"
+	c.version = empty
+	c.strategy = empty
 
 	return StatusDone{true}
 }

@@ -15,6 +15,7 @@ audit: tools
 
 .PHONY: lint
 lint:
+	@golangci-lint config verify
 	@golangci-lint run
 
 .PHONY: test
