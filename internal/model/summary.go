@@ -44,16 +44,15 @@ type Summary struct {
 	filenameComposeGreen string
 	filenameNginxConf    string
 
-	currentDir          string
-	currentVersion      string
-	currentStrategy     domain.Strategy
-	currentPortBackend  string
-	currentPortFrontend string
+	currentDir string
 
-	nextVersion      string
-	nextStrategy     domain.Strategy
-	nextPortBackend  string
-	nextPortFrontend string
+	currentVersion  string
+	currentStrategy domain.Strategy
+
+	nextVersion  string
+	nextStrategy domain.Strategy
+
+	ports []LocationPort
 
 	deployLaunching   *bool
 	deployHealthcheck *bool
@@ -63,6 +62,12 @@ type Summary struct {
 	shutdownStopping *bool
 
 	styles styles
+}
+
+type LocationPort struct {
+	Location    string
+	CurrentPort string
+	NextPort    string
 }
 
 type styles struct {
@@ -93,16 +98,15 @@ func NewSummary(cfg SummaryConfig) *Summary {
 		filenameComposeGreen: cfg.FilenameComposeGreen,
 		filenameNginxConf:    cfg.FilenameNginxConf,
 
-		currentDir:          "???",
-		currentVersion:      "???",
-		currentStrategy:     "???",
-		currentPortBackend:  "???",
-		currentPortFrontend: "???",
+		currentDir: "???",
 
-		nextVersion:      "???",
-		nextStrategy:     "???",
-		nextPortBackend:  "???",
-		nextPortFrontend: "???",
+		currentVersion:  "???",
+		currentStrategy: "???",
+
+		nextVersion:  "???",
+		nextStrategy: "???",
+
+		ports: nil,
 
 		styles: styles{
 			category: lipgloss.NewStyle().
@@ -190,10 +194,10 @@ func (s *Summary) View() string {
 		s.styles.title.Render("nginx.conf (symlink): ")+s.styles.text.Render(s.filenameNginxConf),
 
 		s.styles.category.Render("Deploy strategy"),
-		s.styles.title.Render("Version:         ")+s.styles.text.Render(s.currentVersion)+" >> "+s.styles.text.Render(s.nextVersion),
-		s.styles.title.Render("Strategy:        ")+s.styles.text.Render(s.currentStrategy.String())+" >> "+s.styles.text.Render(s.nextStrategy.String()),
-		s.styles.title.Render("Port - Backend:  ")+s.styles.text.Render(s.currentPortBackend)+" >> "+s.styles.text.Render(s.nextPortBackend),
-		s.styles.title.Render("Port - Frontend: ")+s.styles.text.Render(s.currentPortFrontend)+" >> "+s.styles.text.Render(s.nextPortFrontend),
+		s.styles.title.Render("Version:  ")+s.styles.text.Render(s.currentVersion)+" >> "+s.styles.text.Render(s.nextVersion),
+		s.styles.title.Render("Strategy: ")+s.styles.text.Render(s.currentStrategy.String())+" >> "+s.styles.text.Render(s.nextStrategy.String()),
+
+		s.portsView(),
 
 		deploy,
 		switchStrategy,
@@ -242,10 +246,6 @@ func (s *Summary) GetCurrentStrategy() domain.Strategy {
 	return s.currentStrategy
 }
 
-func (s *Summary) GetCurrentPorts() (backend string, frontend string) {
-	return s.currentPortBackend, s.currentPortFrontend
-}
-
 func (s *Summary) GetNextVersion() string {
 	return s.nextVersion
 }
@@ -254,8 +254,8 @@ func (s *Summary) GetNextStrategy() domain.Strategy {
 	return s.nextStrategy
 }
 
-func (s *Summary) GetNextPorts() (backend string, frontend string) {
-	return s.nextPortBackend, s.nextPortFrontend
+func (s *Summary) GetPorts() []LocationPort {
+	return s.ports
 }
 
 func (s *Summary) UpdateDir(value string) {
@@ -290,11 +290,6 @@ func (s *Summary) UpdateCurrentStrategy(value domain.Strategy) {
 	s.currentStrategy = value
 }
 
-func (s *Summary) UpdateCurrentPorts(backend string, frontend string) {
-	s.currentPortBackend = backend
-	s.currentPortFrontend = frontend
-}
-
 func (s *Summary) UpdateNextVersion(value string) {
 	s.nextVersion = value
 }
@@ -303,9 +298,8 @@ func (s *Summary) UpdateNextStrategy(value domain.Strategy) {
 	s.nextStrategy = value
 }
 
-func (s *Summary) UpdateNextPorts(backend string, frontend string) {
-	s.nextPortBackend = backend
-	s.nextPortFrontend = frontend
+func (s *Summary) UpdatePorts(ports []LocationPort) {
+	s.ports = ports
 }
 
 func (s *Summary) UpdateDeployLaunching(value bool) {
@@ -334,6 +328,27 @@ func (s *Summary) boolToIcon(b *bool) string {
 	}
 
 	return s.theme.StyleRed.Render("❌")
+}
+
+func (s *Summary) portsView() string {
+	if len(s.ports) == 0 {
+		return ""
+	}
+
+	lines := []string{
+		s.styles.category.Render("Ports"),
+	}
+
+	for _, p := range s.ports {
+		loc := s.styles.title.Render(fmt.Sprintf("%s: ", p.Location))
+		cp := s.styles.text.Render(p.CurrentPort)
+		np := s.styles.text.Render(p.NextPort)
+		lines = append(lines,
+			loc+cp+" >> "+np,
+		)
+	}
+
+	return strings.Join(lines, "\n")
 }
 
 func splitString(s string, width int) string {

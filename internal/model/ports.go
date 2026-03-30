@@ -2,15 +2,18 @@ package model
 
 import (
 	"fmt"
-	"os"
-	"slices"
+	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/goccy/go-yaml"
 
 	"debafr/internal/domain"
+)
+
+var (
+	reLocationBlock = regexp.MustCompile(`(?m)^\s*location\s+(\S+)\s*\{`)
+	reProxyPass     = regexp.MustCompile(`(?m)^(\s*)(#?\s*)proxy_pass\s+http://127\.0\.0\.1:(\d+)\s*;\s*(#\s*(blue|green))?`)
 )
 
 type Ports struct {
@@ -19,18 +22,9 @@ type Ports struct {
 	theme   *domain.Theme
 	spinner spinner.Model
 
-	ports portsInfo
-	err   error
-}
+	ports []LocationPort
 
-type portsInfo struct {
-	blue  ports
-	green ports
-}
-
-type ports struct {
-	backend  string
-	frontend string
+	err error
 }
 
 func NewPorts(dic DIC) *Ports {
@@ -50,8 +44,11 @@ func (c *Ports) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case StatusDone:
 		if c.summary.GetMode() == domain.ModeInstall {
-			c.summary.UpdateCurrentPorts("---", "---")
-			c.summary.UpdateNextPorts(c.ports.blue.backend, c.ports.blue.frontend)
+			for i := range c.ports {
+				c.ports[i].CurrentPort = "---"
+			}
+
+			c.summary.UpdatePorts(c.ports)
 
 			return c, func() tea.Msg {
 				return NextCmdMsg{
@@ -60,19 +57,7 @@ func (c *Ports) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		if c.summary.GetCurrentStrategy() == domain.StrategyBlue {
-			c.summary.UpdateCurrentPorts(c.ports.blue.backend, c.ports.blue.frontend)
-			c.summary.UpdateNextPorts(c.ports.green.backend, c.ports.green.frontend)
-
-			return c, func() tea.Msg {
-				return NextCmdMsg{
-					NextCmd: NewNextDeploy(c.dic),
-				}
-			}
-		}
-
-		c.summary.UpdateCurrentPorts(c.ports.green.backend, c.ports.green.frontend)
-		c.summary.UpdateNextPorts(c.ports.blue.backend, c.ports.blue.frontend)
+		c.summary.UpdatePorts(c.ports)
 
 		return c, func() tea.Msg {
 			return NextCmdMsg{
@@ -90,7 +75,7 @@ func (c *Ports) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (c *Ports) View() string {
-	prefix := "Searching ports from docker compose files"
+	prefix := "Searching ports from nginx config"
 
 	if c.err != nil {
 		return prefix + "... " + c.theme.StyleRed.Render(
@@ -112,66 +97,88 @@ func (c *Ports) processing() tea.Msg {
 	}
 	defer root.Close()
 
-	projectName := c.summary.GetProjectName()
-
-	c.ports.blue.backend, c.ports.blue.frontend, err = findPorts(root, c.summary.GetFilenameComposeBlue(), projectName)
+	content, err := root.ReadFile(c.summary.GetFilenameNginxConf())
 	if err != nil {
 		return StatusError{
-			fmt.Errorf("failed to find blue ports: %v", err),
+			fmt.Errorf("failed to read nginx config: %v", err),
 		}
 	}
 
-	c.ports.green.backend, c.ports.green.frontend, err = findPorts(root, c.summary.GetFilenameComposeGreen(), projectName)
+	c.ports, err = parseNginxLocationPorts(string(content))
 	if err != nil {
 		return StatusError{
-			fmt.Errorf("failed to find green ports: %v", err),
+			fmt.Errorf("failed to parse nginx config: %v", err),
+		}
+	}
+
+	if len(c.ports) == 0 {
+		return StatusError{
+			fmt.Errorf("no location ports found in nginx config"),
 		}
 	}
 
 	return StatusDone{true}
 }
 
-func findPorts(root *os.Root, pathFile string, projectName string) (backend string, frontend string, err error) {
-	data, err := root.ReadFile(pathFile)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to read file: %v", err)
+func parseNginxLocationPorts(content string) ([]LocationPort, error) {
+	var result []LocationPort
+
+	locMatches := reLocationBlock.FindAllStringSubmatchIndex(content, -1)
+
+	for i, locMatch := range locMatches {
+		locPath := content[locMatch[2]:locMatch[3]]
+
+		blockStart := locMatch[1]
+
+		var blockEnd int
+		if i+1 < len(locMatches) {
+			blockEnd = locMatches[i+1][0]
+		} else {
+			blockEnd = len(content)
+		}
+
+		block := content[blockStart:blockEnd]
+
+		depth := 0
+		cutAt := -1
+		for pos, ch := range block {
+			if ch == '{' {
+				depth++
+			} else if ch == '}' {
+				depth--
+				if depth == 0 {
+					cutAt = blockStart + pos + 1
+					break
+				}
+			}
+		}
+		if cutAt != -1 {
+			block = content[blockStart:cutAt]
+		}
+
+		proxyMatches := reProxyPass.FindAllStringSubmatch(block, -1)
+
+		var activePort, commentedPort string
+
+		for _, m := range proxyMatches {
+			isCommented := strings.Contains(m[0], "#proxy_pass") || strings.HasPrefix(strings.TrimSpace(m[0]), "#")
+			port := m[3]
+
+			if isCommented {
+				commentedPort = port
+			} else {
+				activePort = port
+			}
+		}
+
+		if activePort != "" && commentedPort != "" {
+			result = append(result, LocationPort{
+				Location:    locPath,
+				CurrentPort: activePort,
+				NextPort:    commentedPort,
+			})
+		}
 	}
 
-	var compose DockerCompose
-	err = yaml.Unmarshal(data, &compose)
-	if err != nil {
-		return "", "", fmt.Errorf("yaml unmarshal: %v", err)
-	}
-
-	for _, service := range compose.Services {
-		if len(service.Labels) == 0 {
-			continue
-		}
-		if len(service.Ports) == 0 {
-			continue
-		}
-
-		if slices.Contains(service.Labels, "app.project.name="+projectName) &&
-			slices.Contains(service.Labels, "app.service.type="+domain.ContainerAppServiceTypeBackend.String()) {
-			backend = strings.Split(service.Ports[0], ":")[0]
-			continue
-		}
-
-		if slices.Contains(service.Labels, "app.project.name="+projectName) &&
-			slices.Contains(service.Labels, "app.service.type="+domain.ContainerAppServiceTypeFrontend.String()) {
-			frontend = strings.Split(service.Ports[0], ":")[0]
-			continue
-		}
-	}
-
-	return backend, frontend, nil
-}
-
-type DockerCompose struct {
-	Services map[string]Service `yaml:"services"`
-}
-
-type Service struct {
-	Labels []string `yaml:"labels"`
-	Ports  []string `yaml:"ports"`
+	return result, nil
 }

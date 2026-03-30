@@ -13,14 +13,11 @@ import (
 const fileMode = 0644
 
 type switchConfig struct {
-	root             *os.Root
-	filePath         string
-	currPortBackend  string
-	currPortFrontend string
-	nextPortBackend  string
-	nextPortFrontend string
-	cmdTest          *exec.Cmd
-	cmdReload        *exec.Cmd
+	root      *os.Root
+	filePath  string
+	ports     []LocationPort
+	cmdTest   *exec.Cmd
+	cmdReload *exec.Cmd
 }
 
 func NewExecSwitchingStrategy(dic DIC) *Exec {
@@ -44,25 +41,18 @@ func NewExecSwitchingStrategy(dic DIC) *Exec {
 			}
 			defer root.Close()
 
-			devMode := dic.GetDevMode()
-			currPortBackend, currPortFrontend := summary.GetCurrentPorts()
-			nextPortBackend, nextPortFrontend := summary.GetNextPorts()
-
 			cmdTest := exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-t")
 			cmdReload := exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-s", "reload")
-			if devMode {
+			if dic.GetDevMode() {
 				cmdTest = exec.CommandContext(ctx, cfg.BinPaths.Docker, "exec", TestContainerName, cfg.BinPaths.Nginx, "-t")
 				cmdReload = exec.CommandContext(ctx, cfg.BinPaths.Docker, "exec", TestContainerName, cfg.BinPaths.Nginx, "-s", "reload")
 			}
 			resNginx := switchNginx(switchConfig{
-				root:             root,
-				filePath:         summary.GetFilenameNginxConf(),
-				currPortBackend:  currPortBackend,
-				currPortFrontend: currPortFrontend,
-				nextPortBackend:  nextPortBackend,
-				nextPortFrontend: nextPortFrontend,
-				cmdTest:          cmdTest,
-				cmdReload:        cmdReload,
+				root:      root,
+				filePath:  summary.GetFilenameNginxConf(),
+				ports:     summary.GetPorts(),
+				cmdTest:   cmdTest,
+				cmdReload: cmdReload,
 			})
 			if resNginx.Status == domain.ExecResultStatusError {
 				return resNginx
@@ -102,26 +92,17 @@ func switchNginx(cfg switchConfig) domain.ExecResult {
 
 	const proxyPass = "proxy_pass http://127.0.0.1:" //#nosec G101 -- This is a false positive
 
-	currBackendString := proxyPass + cfg.currPortBackend
-	nextBackendString := proxyPass + cfg.nextPortBackend
+	for _, p := range cfg.ports {
+		curr := proxyPass + p.CurrentPort
+		next := proxyPass + p.NextPort
 
-	currFrontendString := proxyPass + cfg.currPortFrontend
-	nextFrontendString := proxyPass + cfg.nextPortFrontend
+		if !strings.Contains(fileContent, "#"+curr) {
+			fileContent = strings.Replace(fileContent, curr, "#"+curr, 1)
+		}
 
-	if !strings.Contains(fileContent, "#"+currBackendString) {
-		fileContent = strings.Replace(fileContent, currBackendString, "#"+currBackendString, 1)
-	}
-
-	if strings.Contains(fileContent, "#"+nextBackendString) {
-		fileContent = strings.Replace(fileContent, "#"+nextBackendString, nextBackendString, 1)
-	}
-
-	if !strings.Contains(fileContent, "#"+currFrontendString) {
-		fileContent = strings.Replace(fileContent, currFrontendString, "#"+currFrontendString, 1)
-	}
-
-	if strings.Contains(fileContent, "#"+nextFrontendString) {
-		fileContent = strings.Replace(fileContent, "#"+nextFrontendString, nextFrontendString, 1)
+		if strings.Contains(fileContent, "#"+next) {
+			fileContent = strings.Replace(fileContent, "#"+next, next, 1)
+		}
 	}
 
 	err = cfg.root.WriteFile(cfg.filePath, []byte(fileContent), fileMode) //#nosec G306 -- This is a false positive
