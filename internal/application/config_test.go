@@ -3,6 +3,7 @@ package application
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -17,12 +18,10 @@ func TestLoadConfiguration(t *testing.T) {
 		{
 			name: "Should load configuration from env with default values",
 			setEnvFunc: func() {
-				t.Setenv("DEBAFR_PROJECT_NAME", "capuchin")
+				// put env vars
 			},
 			want: &Configuration{
 				DevMode: func() bool {
-					// Это надо из-за .envrc и запуска тестов через make test
-
 					fromEnv := os.Getenv("DEBAFR_DEV_MODE")
 					if fromEnv == "" {
 						return false
@@ -30,11 +29,27 @@ func TestLoadConfiguration(t *testing.T) {
 
 					return fromEnv == "true"
 				}(),
-				ProjectName: "capuchin",
-				Filename: Filename{
-					ComposeBlue:  "compose.blue.yaml",
-					ComposeGreen: "compose.green.yaml",
-					NginxConf:    "nginx.conf",
+				Toml: TomlConfig{
+					App: AppConfig{
+						Name: "capuchin",
+					},
+					Files: FilesConfig{
+						ComposeBlue:  "compose.blue.yaml",
+						ComposeGreen: "compose.green.yaml",
+						NginxConf:    "nginx.conf",
+					},
+					BinPaths: BinPathsConfig{
+						Docker: "/usr/bin/docker",
+						Curl:   "/usr/bin/curl",
+						Nginx:  "/usr/sbin/nginx",
+					},
+					Timeouts: TimeoutsConfig{
+						Default: 30 * time.Second,
+					},
+					Healthcheck: HealthcheckConfig{
+						MaxRetries: 10,
+						RetryDelay: 3 * time.Second,
+					},
 				},
 			},
 			wantErr: nil,
@@ -43,20 +58,30 @@ func TestLoadConfiguration(t *testing.T) {
 			name: "Should load configuration from env",
 			setEnvFunc: func() {
 				t.Setenv("DEBAFR_DEV_MODE", "true")
-
-				t.Setenv("DEBAFR_PROJECT_NAME", "capuchin")
-
-				t.Setenv("DEBAFR_FILENAME_COMPOSE_BLUE", "compose-blue")
-				t.Setenv("DEBAFR_FILENAME_COMPOSE_GREEN", "compose-green")
-				t.Setenv("DEBAFR_FILENAME_NGINX_CONF", "nginx-conf")
 			},
 			want: &Configuration{
-				DevMode:     true,
-				ProjectName: "capuchin",
-				Filename: Filename{
-					ComposeBlue:  "compose-blue",
-					ComposeGreen: "compose-green",
-					NginxConf:    "nginx-conf",
+				DevMode: true,
+				Toml: TomlConfig{
+					App: AppConfig{
+						Name: "capuchin",
+					},
+					Files: FilesConfig{
+						ComposeBlue:  "compose.blue.yaml",
+						ComposeGreen: "compose.green.yaml",
+						NginxConf:    "nginx.conf",
+					},
+					BinPaths: BinPathsConfig{
+						Docker: "/usr/bin/docker",
+						Curl:   "/usr/bin/curl",
+						Nginx:  "/usr/sbin/nginx",
+					},
+					Timeouts: TimeoutsConfig{
+						Default: 30 * time.Second,
+					},
+					Healthcheck: HealthcheckConfig{
+						MaxRetries: 10,
+						RetryDelay: 3 * time.Second,
+					},
 				},
 			},
 			wantErr: nil,

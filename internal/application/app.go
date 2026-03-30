@@ -61,15 +61,15 @@ func New(appVersion string) (*App, error) {
 		AppVersion: appVersion,
 		DevMode:    conf.DevMode,
 
-		ProjectName: conf.ProjectName,
+		ProjectName: conf.Toml.App.Name,
 
 		Width: summaryWidth,
 
 		Theme: theme,
 
-		FilenameComposeBlue:  conf.Filename.ComposeBlue,
-		FilenameComposeGreen: conf.Filename.ComposeGreen,
-		FilenameNginxConf:    conf.Filename.NginxConf,
+		FilenameComposeBlue:  conf.Toml.Files.ComposeBlue,
+		FilenameComposeGreen: conf.Toml.Files.ComposeGreen,
+		FilenameNginxConf:    conf.Toml.Files.NginxConf,
 	})
 
 	dic := NewDIC(DICConfig{
@@ -85,6 +85,8 @@ func New(appVersion string) (*App, error) {
 		Summary: summary,
 
 		DockerService: dockerService,
+
+		AppConfig: conf.Toml.GetDomainConfig(),
 	})
 
 	return &App{

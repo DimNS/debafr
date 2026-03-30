@@ -19,6 +19,8 @@ type DICConfig struct {
 	Summary *model.Summary
 
 	DockerService *docker.Docker
+
+	AppConfig domain.AppConfig
 }
 
 type DIC struct {
@@ -34,6 +36,8 @@ type DIC struct {
 	summary *model.Summary
 
 	dockerService *docker.Docker
+
+	appConfig domain.AppConfig
 }
 
 func NewDIC(cfg DICConfig) *DIC {
@@ -50,6 +54,8 @@ func NewDIC(cfg DICConfig) *DIC {
 		summary: cfg.Summary,
 
 		dockerService: cfg.DockerService,
+
+		appConfig: cfg.AppConfig,
 	}
 }
 
@@ -79,4 +85,8 @@ func (d *DIC) GetSummary() *model.Summary {
 
 func (d *DIC) GetDockerService() *docker.Docker {
 	return d.dockerService
+}
+
+func (d *DIC) GetAppConfig() domain.AppConfig {
+	return d.appConfig
 }

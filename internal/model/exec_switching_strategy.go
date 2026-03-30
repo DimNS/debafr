@@ -10,9 +10,7 @@ import (
 	"debafr/internal/domain"
 )
 
-const (
-	fileMode = 0644
-)
+const fileMode = 0644
 
 type switchConfig struct {
 	root             *os.Root
@@ -27,12 +25,13 @@ type switchConfig struct {
 
 func NewExecSwitchingStrategy(dic DIC) *Exec {
 	summary := dic.GetSummary()
+	cfg := dic.GetAppConfig()
 
 	return NewExec(dic, domain.ExecConfig{
 		Name: "Switching strategy",
 
 		StartFunc: func() domain.ExecResult {
-			ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeouts.Default)
 			defer cancel()
 
 			root, err := summary.GetRoot()
@@ -49,11 +48,11 @@ func NewExecSwitchingStrategy(dic DIC) *Exec {
 			currPortBackend, currPortFrontend := summary.GetCurrentPorts()
 			nextPortBackend, nextPortFrontend := summary.GetNextPorts()
 
-			cmdTest := exec.CommandContext(ctx, PathNginx, "-t")
-			cmdReload := exec.CommandContext(ctx, PathNginx, "-s", "reload")
+			cmdTest := exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-t")
+			cmdReload := exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-s", "reload")
 			if devMode {
-				cmdTest = exec.CommandContext(ctx, PathDocker, "exec", TestContainerName, PathNginx, "-t")
-				cmdReload = exec.CommandContext(ctx, PathDocker, "exec", TestContainerName, PathNginx, "-s", "reload")
+				cmdTest = exec.CommandContext(ctx, cfg.BinPaths.Docker, "exec", TestContainerName, cfg.BinPaths.Nginx, "-t")
+				cmdReload = exec.CommandContext(ctx, cfg.BinPaths.Docker, "exec", TestContainerName, cfg.BinPaths.Nginx, "-s", "reload")
 			}
 			resNginx := switchNginx(switchConfig{
 				root:             root,

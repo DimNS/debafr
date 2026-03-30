@@ -11,6 +11,7 @@ require (
 	github.com/docker/docker v28.0.1+incompatible
 	github.com/goccy/go-yaml v1.18.0
 	github.com/hashicorp/go-version v1.7.0
+	github.com/pelletier/go-toml/v2 v2.3.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/term v0.30.0
 )

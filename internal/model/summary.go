@@ -171,9 +171,9 @@ func (s *Summary) View() string {
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		header,
-		s.styles.title.Render("DevMode:   ")+devModeStr,
-		s.styles.title.Render("Project:   ")+s.styles.text.Render(s.projectName),
-		s.styles.title.Render("Mode:      ")+s.styles.text.Render(s.mode.String()),
+		s.styles.title.Render("DevMode: ")+devModeStr,
+		s.styles.title.Render("Project: ")+s.styles.text.Render(s.projectName),
+		s.styles.title.Render("Mode:    ")+s.styles.text.Render(s.mode.String()),
 
 		s.styles.category.Render("Requirements"),
 		s.styles.title.Render("curl:           ")+s.styles.text.Render(s.requirementsCurlVersion),

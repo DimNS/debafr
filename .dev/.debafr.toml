@@ -1,0 +1,22 @@
+# Конфигурация Debafr
+# Этот файл должен находится в корневой директории приложения
+
+[app]
+name = "myapp"
+
+[files]
+compose_blue = "compose.blue.yaml"
+compose_green = "compose.green.yaml"
+nginx_conf = "nginx.conf"
+
+[binpaths]
+docker = "/usr/bin/docker"
+curl = "/usr/bin/curl"
+nginx = "/usr/sbin/nginx"
+
+[timeouts]
+default = "30s"
+
+[healthcheck]
+max_retries = 10
+retry_delay = "3s"

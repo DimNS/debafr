@@ -12,21 +12,23 @@ import (
 
 type Complete struct {
 	theme *domain.Theme
+	cfg   domain.AppConfig
 
 	output string
 }
 
-func NewComplete(theme *domain.Theme) *Complete {
+func NewComplete(dic DIC) *Complete {
 	return &Complete{
-		theme: theme,
+		theme: dic.GetTheme(),
+		cfg:   dic.GetAppConfig(),
 	}
 }
 
 func (c *Complete) Init() tea.Cmd {
-	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), c.cfg.Timeouts.Default)
 	defer cancel()
 
-	out, err := exec.CommandContext(ctx, PathDocker, "ps").CombinedOutput()
+	out, err := exec.CommandContext(ctx, c.cfg.BinPaths.Docker, "ps").CombinedOutput()
 	if err != nil {
 		outString := string(out)
 
@@ -52,5 +54,5 @@ func (c *Complete) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (c *Complete) View() string {
-	return c.output + "\n🎉 Application updated successfully"
+	return c.output + "\n🎉 Application deployed successfully"
 }

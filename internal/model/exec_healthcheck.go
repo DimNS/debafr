@@ -12,14 +12,10 @@ import (
 	"debafr/internal/provider/docker"
 )
 
-const (
-	maxRetries = 10
-	retryDelay = 3 * time.Second
-)
-
 func NewExecHealthcheck(dic DIC) *Exec {
 	summary := dic.GetSummary()
 	dockerService := dic.GetDockerService()
+	cfg := dic.GetAppConfig()
 
 	return NewExec(dic, domain.ExecConfig{
 		Name: "Healthcheck",
@@ -36,7 +32,7 @@ func NewExecHealthcheck(dic DIC) *Exec {
 				}
 			}
 
-			return healthcheck(dockerService, frontend, backend)
+			return healthcheck(dockerService, frontend, backend, cfg.Healthcheck.MaxRetries, cfg.Healthcheck.RetryDelay)
 		},
 
 		SuccessFunc: func() {
@@ -52,12 +48,17 @@ func NewExecHealthcheck(dic DIC) *Exec {
 				return NewExecSwitchingStrategy(dic)
 			}
 
-			return NewComplete(dic.GetTheme())
+			return NewComplete(dic)
 		}(),
 	})
 }
 
-func healthcheck(dockerService *docker.Docker, frontend, backend *container.Summary) domain.ExecResult {
+func healthcheck(
+	dockerService *docker.Docker,
+	frontend, backend *container.Summary,
+	maxRetries int,
+	retryDelay time.Duration,
+) domain.ExecResult {
 	var lastResult domain.ExecResult
 
 	for attempt := 1; attempt <= maxRetries; attempt++ {

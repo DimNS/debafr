@@ -11,20 +11,34 @@ import (
 
 func NewExecLaunchingDeploy(dic DIC) *Exec {
 	summary := dic.GetSummary()
+	cfg := dic.GetAppConfig()
 
 	return NewExec(dic, domain.ExecConfig{
 		Name: "Deploying",
 
 		StartFunc: func() domain.ExecResult {
-			ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeouts.Default)
 			defer cancel()
 
-			command := exec.CommandContext( //#nosec G204 -- This is a false positive
+			var f string
+			switch summary.GetNextStrategy() {
+			case domain.StrategyBlue:
+				f = cfg.Files.ComposeBlue
+			case domain.StrategyGreen:
+				f = cfg.Files.ComposeGreen
+			default:
+				return domain.ExecResult{
+					Status: domain.ExecResultStatusError,
+					Err:    fmt.Errorf("unknown strategy: %s", summary.GetNextStrategy()),
+				}
+			}
+
+			command := exec.CommandContext(
 				ctx,
-				PathDocker,
+				cfg.BinPaths.Docker,
 				"compose",
 				"-f",
-				fmt.Sprintf("./compose.%s.yaml", summary.GetNextStrategy()),
+				f,
 				"up",
 				"-d",
 			)
@@ -33,7 +47,7 @@ func NewExecLaunchingDeploy(dic DIC) *Exec {
 			if dic.GetDevMode() {
 				command = exec.CommandContext(
 					ctx,
-					PathDocker,
+					cfg.BinPaths.Docker,
 					"run",
 					"-d",
 					"--name",

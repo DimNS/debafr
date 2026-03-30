@@ -18,4 +18,6 @@ type DIC interface {
 	GetSummary() *Summary
 
 	GetDockerService() *docker.Docker
+
+	GetAppConfig() domain.AppConfig
 }

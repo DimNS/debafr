@@ -12,12 +12,13 @@ import (
 
 func NewExecRequirements(dic DIC) *Exec {
 	summary := dic.GetSummary()
+	cfg := dic.GetAppConfig()
 
 	return NewExec(dic, domain.ExecConfig{
 		Name: "Requirements",
 
 		StartFunc: func() domain.ExecResult {
-			ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeouts.Default)
 			defer cancel()
 
 			var (
@@ -34,25 +35,25 @@ func NewExecRequirements(dic DIC) *Exec {
 				nginxRegex         = regexp.MustCompile(`nginx/(?P<version>[\d\.]+)`)
 			)
 
-			curlVersion, err = getVersion(exec.CommandContext(ctx, PathCurl, "--version"), curlRegex)
+			curlVersion, err = getVersion(exec.CommandContext(ctx, cfg.BinPaths.Curl, "--version"), curlRegex)
 			if err != nil {
 				return *err
 			}
 			summary.UpdateRequirementsCurlVersion(curlVersion)
 
-			dockerVersion, err = getVersion(exec.CommandContext(ctx, PathDocker, "-v"), dockerRegex)
+			dockerVersion, err = getVersion(exec.CommandContext(ctx, cfg.BinPaths.Docker, "-v"), dockerRegex)
 			if err != nil {
 				return *err
 			}
 			summary.UpdateRequirementsDockerVersion(dockerVersion)
 
-			dockerComposeVersion, err = getVersion(exec.CommandContext(ctx, PathDocker, "compose", "version"), dockerComposeRegex)
+			dockerComposeVersion, err = getVersion(exec.CommandContext(ctx, cfg.BinPaths.Docker, "compose", "version"), dockerComposeRegex)
 			if err != nil {
 				return *err
 			}
 			summary.UpdateRequirementsDockerComposeVersion(dockerComposeVersion)
 
-			nginxVersion, err = getVersion(exec.CommandContext(ctx, PathNginx, "-v"), nginxRegex)
+			nginxVersion, err = getVersion(exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-v"), nginxRegex)
 			if err != nil {
 				return *err
 			}

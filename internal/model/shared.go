@@ -1,20 +1,10 @@
 package model
 
 import (
-	"time"
-
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const (
-	TestContainerName = "debafr_app"
-
-	PathDocker = "/usr/bin/docker"
-	PathCurl   = "/usr/bin/curl"
-	PathNginx  = "/usr/sbin/nginx"
-
-	DefaultTimeout = 30 * time.Second
-)
+const TestContainerName = "debafr_app"
 
 type NextCmdMsg struct {
 	NextCmd tea.Model

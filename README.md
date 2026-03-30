@@ -31,10 +31,7 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
     ```bash
     ln -sf /etc/nginx/sites-available/project.ru /opt/project/nginx.conf
     ```
-2. Настройка переменных окружения (используется инструмент [direnv](https://github.com/direnv/direnv))
-    ```bash
-    export DOCKER_API_VERSION="1.43"' > /opt/project/.envrc
-    ```
+2. Создайте конфигурационный файл проекта, пример можно посмотреть здесь: `.dev/.debafr.toml`
 3. Запустите приложение
     ```bash
     debafr

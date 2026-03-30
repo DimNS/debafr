@@ -53,6 +53,6 @@ func NewExecStoppingCurrentDeploy(dic DIC) *Exec {
 			summary.UpdateShutdownStopping(false)
 		},
 
-		NextCmd: NewComplete(dic.GetTheme()),
+		NextCmd: NewComplete(dic),
 	})
 }
