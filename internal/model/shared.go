@@ -4,7 +4,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const TestContainerName = "debafr_app"
+const (
+	TestContainerName = "debafr_app"
+
+	EmptyValue = "---"
+)
 
 type NextCmdMsg struct {
 	NextCmd tea.Model

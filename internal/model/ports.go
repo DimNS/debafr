@@ -46,7 +46,7 @@ func (c *Ports) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case StatusDone:
 		if c.summary.GetMode() == domain.ModeInstall {
 			for i := range c.ports {
-				c.ports[i].CurrentPort = "---"
+				c.ports[i].CurrentPort = EmptyValue
 			}
 
 			c.summary.UpdatePorts(c.ports)
