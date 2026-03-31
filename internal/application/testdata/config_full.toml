@@ -1,5 +1,5 @@
 [app]
-name = "myapp"
+project_name = "myapp"
 
 [files]
 compose_blue = "myapp_compose.blue.yaml"

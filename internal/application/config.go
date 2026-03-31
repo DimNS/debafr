@@ -33,7 +33,7 @@ type TomlConfig struct {
 }
 
 type AppConfig struct {
-	Name string `toml:"name"`
+	ProjectName string `toml:"project_name"`
 }
 
 type FilesConfig struct {
@@ -72,7 +72,7 @@ func (d *Duration) UnmarshalText(text []byte) error {
 }
 
 func (tc *TomlConfig) Validate() error {
-	if tc.App.Name == "" {
+	if tc.App.ProjectName == "" {
 		return errors.New("app name is empty")
 	}
 

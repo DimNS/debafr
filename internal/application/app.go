@@ -61,7 +61,7 @@ func New(appVersion string) (*App, error) {
 		AppVersion: appVersion,
 		DevMode:    conf.DevMode,
 
-		ProjectName: conf.Toml.App.Name,
+		ProjectName: conf.Toml.App.ProjectName,
 
 		Width: summaryWidth,
 

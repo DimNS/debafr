@@ -33,7 +33,7 @@ func TestLoadConfiguration(t *testing.T) {
 				}(),
 				Toml: TomlConfig{
 					App: AppConfig{
-						Name: "myapp",
+						ProjectName: "myapp",
 					},
 					Files: FilesConfig{
 						ComposeBlue:  "compose.blue.yaml",
@@ -66,7 +66,7 @@ func TestLoadConfiguration(t *testing.T) {
 				DevMode: true,
 				Toml: TomlConfig{
 					App: AppConfig{
-						Name: "myapp",
+						ProjectName: "myapp",
 					},
 					Files: FilesConfig{
 						ComposeBlue:  "myapp_compose.blue.yaml",

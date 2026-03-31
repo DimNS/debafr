@@ -2,7 +2,13 @@
 # Этот файл должен находится в корневой директории приложения
 
 [app]
-name = "myapp"
+# Должно совпадать со значениями из compose.yaml:
+# name: myapp
+# services:
+#  service_name:
+#    labels:
+#      - "app.project.name=myapp"
+project_name = "myapp"
 
 [files]
 compose_blue = "compose.blue.yaml"
