@@ -3,6 +3,8 @@ package model
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path"
 	"regexp"
 	"strings"
 
@@ -88,17 +90,7 @@ func (c *Ports) View() string {
 }
 
 func (c *Ports) processing() tea.Msg {
-	root, err := c.summary.GetRoot()
-	if err != nil {
-		return domain.ExecResult{
-			Status: domain.ExecResultStatusError,
-			Err:    err,
-			Output: "failed to open root",
-		}
-	}
-	defer root.Close()
-
-	content, err := root.ReadFile(c.summary.GetFilenameNginxConf())
+	content, err := os.ReadFile(path.Join(c.summary.GetDir(), c.summary.GetFilenameNginxConf()))
 	if err != nil {
 		return StatusError{
 			fmt.Errorf("failed to read nginx config: %v", err),

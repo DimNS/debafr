@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 
 	"debafr/internal/domain"
@@ -13,7 +14,6 @@ import (
 const fileMode = 0644
 
 type switchConfig struct {
-	root      *os.Root
 	filePath  string
 	ports     []LocationPort
 	cmdTest   *exec.Cmd
@@ -31,16 +31,6 @@ func NewExecSwitchingStrategy(dic DIC) *Exec {
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeouts.Default)
 			defer cancel()
 
-			root, err := summary.GetRoot()
-			if err != nil {
-				return domain.ExecResult{
-					Status: domain.ExecResultStatusError,
-					Err:    err,
-					Output: "failed to open root",
-				}
-			}
-			defer root.Close()
-
 			cmdTest := exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-t")
 			cmdReload := exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-s", "reload")
 			if dic.GetDevMode() {
@@ -48,8 +38,7 @@ func NewExecSwitchingStrategy(dic DIC) *Exec {
 				cmdReload = exec.CommandContext(ctx, cfg.BinPaths.Docker, "exec", TestContainerName, cfg.BinPaths.Nginx, "-s", "reload")
 			}
 			resNginx := switchNginx(switchConfig{
-				root:      root,
-				filePath:  summary.GetFilenameNginxConf(),
+				filePath:  path.Join(summary.GetDir(), summary.GetFilenameNginxConf()),
 				ports:     summary.GetPorts(),
 				cmdTest:   cmdTest,
 				cmdReload: cmdReload,
@@ -80,7 +69,7 @@ func NewExecSwitchingStrategy(dic DIC) *Exec {
 }
 
 func switchNginx(cfg switchConfig) domain.ExecResult {
-	content, err := cfg.root.ReadFile(cfg.filePath)
+	content, err := os.ReadFile(cfg.filePath)
 	if err != nil {
 		return domain.ExecResult{
 			Status: domain.ExecResultStatusError,
@@ -105,7 +94,7 @@ func switchNginx(cfg switchConfig) domain.ExecResult {
 		}
 	}
 
-	err = cfg.root.WriteFile(cfg.filePath, []byte(fileContent), fileMode) //#nosec G306 -- This is a false positive
+	err = os.WriteFile(cfg.filePath, []byte(fileContent), fileMode) //#nosec G306 -- This is a false positive
 	if err != nil {
 		return domain.ExecResult{
 			Status: domain.ExecResultStatusError,
