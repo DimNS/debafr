@@ -82,13 +82,14 @@ func switchNginx(cfg switchConfig) domain.ExecResult {
 	const proxyPass = "proxy_pass http://127.0.0.1:" //#nosec G101 -- This is a false positive
 
 	for _, p := range cfg.ports {
-		curr := proxyPass + p.CurrentPort
-		next := proxyPass + p.NextPort
-
-		if !strings.Contains(fileContent, "#"+curr) {
-			fileContent = strings.Replace(fileContent, curr, "#"+curr, 1)
+		if p.CurrentPort != EmptyValue {
+			curr := proxyPass + p.CurrentPort
+			if !strings.Contains(fileContent, "#"+curr) {
+				fileContent = strings.Replace(fileContent, curr, "#"+curr, 1)
+			}
 		}
 
+		next := proxyPass + p.NextPort
 		if strings.Contains(fileContent, "#"+next) {
 			fileContent = strings.Replace(fileContent, "#"+next, next, 1)
 		}
