@@ -22,10 +22,7 @@ type NextDeploy struct {
 func NewNextDeploy(dic DIC) *NextDeploy {
 	c := &NextDeploy{
 		dic: dic,
-
-		nextVersion: dic.GetSummary().GetNextVersion(),
-
-		lg: lipgloss.DefaultRenderer(),
+		lg:  lipgloss.DefaultRenderer(),
 	}
 
 	c.form = huh.NewForm(
