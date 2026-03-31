@@ -5,7 +5,7 @@
 #
 # Usage:
 #   Local:  ./install.sh [OPTIONS]
-#   Remote: curl -LsSf https://.../install.sh | sh -s -- [OPTIONS]
+#   Remote: curl -LsSf https://.../install.sh | bash -s -- [OPTIONS]
 #
 # Options:
 #   -v, --version VERSION  Install specific version (default: latest)
@@ -15,9 +15,9 @@
 #   -h, --help             Show this help message
 #
 # Examples:
-#   curl -LsSf https://.../install.sh | sh
-#   curl -LsSf https://.../install.sh | sh -s -- -v v0.5.0
-#   curl -LsSf https://.../install.sh | sh -s -- --uninstall
+#   curl -LsSf https://.../install.sh | bash
+#   curl -LsSf https://.../install.sh | bash -s -- -v v0.2.0
+#   curl -LsSf https://.../install.sh | bash -s -- --uninstall
 #
 
 set -euo pipefail
@@ -25,7 +25,7 @@ set -euo pipefail
 #==============================================================================
 # Configuration
 #==============================================================================
-DEFAULT_VERSION="v0.6.0"
+DEFAULT_VERSION="v0.2.0"
 HOME_BIN_DIR="${HOME}/.local/bin"
 REPO_URL="https://github.com/dimns/debafr"
 
@@ -104,7 +104,7 @@ Debafr Installer
 
 Usage:
   Local:  $(basename "$0") [OPTIONS]
-  Remote: curl -LsSf https://.../install.sh | sh -s -- [OPTIONS]
+  Remote: curl -LsSf https://.../install.sh | bash -s -- [OPTIONS]
 
 Options:
   -v, --version VERSION  Install specific version (default: ${DEFAULT_VERSION})
@@ -115,13 +115,13 @@ Options:
 
 Examples:
   $(basename "$0")                              # Install latest version
-  $(basename "$0") -v v0.5.0                    # Install specific version
+  $(basename "$0") -v v0.2.0                    # Install specific version
   $(basename "$0") --uninstall                  # Remove Debafr
   $(basename "$0") --dry-run                    # Preview installation
 
-  curl -LsSf https://.../install.sh | sh        # Quick install latest
-  curl -LsSf https://.../install.sh | sh -s -- -v v0.5.0  # Install specific version
-  curl -LsSf https://.../install.sh | sh -s -- --uninstall  # Remove
+  curl -LsSf https://.../install.sh | bash        # Quick install latest
+  curl -LsSf https://.../install.sh | bash -s -- -v v0.2.0  # Install specific version
+  curl -LsSf https://.../install.sh | bash -s -- --uninstall  # Remove
 HELP
 }
 
@@ -130,7 +130,7 @@ HELP
 #==============================================================================
 parse_args() {
   # Support passing args via environment variable for piped installations
-  # Usage: INSTALL_DEBAFR_ARGS="-v v0.5.0" curl ... | sh
+  # Usage: INSTALL_DEBAFR_ARGS="-v v0.2.0" curl ... | bash
   local env_args=()
   if [[ -n "${INSTALL_DEBAFR_ARGS:-}" ]]; then
     # shellcheck disable=SC2206
