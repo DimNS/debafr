@@ -27,50 +27,21 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
 
 > Обратите внимание команды выполняются для каталога: `/opt/project`
 
+Структура каталога `/opt/project`
+
+```
+compose.blue.yaml
+compose.green.yaml
+debafr.toml
+nginx.conf >> /etc/nginx/sites-available/project.ru
+```
+
 1. Создайте символическую ссылку на файл конфига nginx
     ```bash
     ln -sf /etc/nginx/sites-available/project.ru /opt/project/nginx.conf
     ```
-2. Порты собираются автоматически из конфига nginx
-    - Из такого примера
-        ```bash
-        location /api {
-            proxy_pass http://127.0.0.1:3001; # blue
-            #proxy_pass http://127.0.0.1:3011; # green
-        }
-
-        location /ws {
-            proxy_pass http://127.0.0.1:3003; # blue
-            #proxy_pass http://127.0.0.1:3013; # green
-        }
-
-        location / {
-            proxy_pass http://127.0.0.1:3003; # blue
-            #proxy_pass http://127.0.0.1:3013; # green
-        }
-        ```
-    - Будет собран вот такой список
-        ```json
-        [
-            {
-                "Location": "/api",
-                "CurrentPort": "3001",
-                "NextPort": "3011"
-            },
-            {
-                "Location": "/ws",
-                "CurrentPort": "3003",
-                "NextPort": "3013"
-            },
-            {
-                "Location": "/",
-                "CurrentPort": "3003",
-                "NextPort": "3013"
-            }
-        ]
-        ```
-3. Создайте конфигурационный файл проекта, пример можно посмотреть здесь: `.dev/.debafr.toml`
-4. Запустите приложение
+2. Создайте конфигурационный файл проекта `/opt/project/debafr.toml`, пример можно посмотреть здесь: `.dev/debafr.toml`
+3. Запустите приложение
     ```bash
     debafr
     ```

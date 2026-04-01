@@ -3,29 +3,38 @@ package domain
 import "time"
 
 type AppConfig struct {
-	Files       FilesConfig
-	BinPaths    BinPathsConfig
-	Timeouts    TimeoutsConfig
-	Healthcheck HealthcheckConfig
+	ProjectName     string
+	ProxyPassPrefix string
+	LocationPorts   []AppConfigLocationPort
+	Files           AppConfigFiles
+	BinPaths        AppConfigBinPaths
+	Timeouts        AppConfigTimeouts
+	Healthcheck     AppConfigHealthcheck
 }
 
-type FilesConfig struct {
+type AppConfigLocationPort struct {
+	Location  string
+	BluePort  string
+	GreenPort string
+}
+
+type AppConfigFiles struct {
 	ComposeBlue  string
 	ComposeGreen string
 	NginxConf    string
 }
 
-type BinPathsConfig struct {
+type AppConfigBinPaths struct {
 	Docker string
 	Curl   string
 	Nginx  string
 }
 
-type TimeoutsConfig struct {
+type AppConfigTimeouts struct {
 	Default time.Duration
 }
 
-type HealthcheckConfig struct {
+type AppConfigHealthcheck struct {
 	MaxRetries int
 	RetryDelay time.Duration
 }

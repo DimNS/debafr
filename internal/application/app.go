@@ -40,7 +40,7 @@ type App struct {
 }
 
 func New(appVersion string) (*App, error) {
-	conf, err := LoadConfiguration(".debafr.toml")
+	conf, err := LoadConfiguration("debafr.toml")
 	if err != nil {
 		return nil, fmt.Errorf("load configuration: %v", err)
 	}

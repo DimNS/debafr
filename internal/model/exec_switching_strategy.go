@@ -14,8 +14,9 @@ import (
 const fileMode = 0644
 
 type switchConfig struct {
+	proxyPass string
 	filePath  string
-	ports     []LocationPort
+	ports     []CurrNextPort
 	cmdTest   *exec.Cmd
 	cmdReload *exec.Cmd
 }
@@ -38,6 +39,7 @@ func NewExecSwitchingStrategy(dic DIC) *Exec {
 				cmdReload = exec.CommandContext(ctx, cfg.BinPaths.Docker, "exec", TestContainerName, cfg.BinPaths.Nginx, "-s", "reload")
 			}
 			resNginx := switchNginx(switchConfig{
+				proxyPass: cfg.ProxyPassPrefix,
 				filePath:  path.Join(summary.GetDir(), summary.GetFilenameNginxConf()),
 				ports:     summary.GetPorts(),
 				cmdTest:   cmdTest,
@@ -79,23 +81,21 @@ func switchNginx(cfg switchConfig) domain.ExecResult {
 
 	fileContent := string(content)
 
-	const proxyPass = "proxy_pass http://127.0.0.1:" //#nosec G101 -- This is a false positive
-
 	for _, p := range cfg.ports {
 		if p.CurrentPort != EmptyValue {
-			curr := proxyPass + p.CurrentPort
+			curr := cfg.proxyPass + p.CurrentPort
 			if !strings.Contains(fileContent, "#"+curr) {
 				fileContent = strings.Replace(fileContent, curr, "#"+curr, 1)
 			}
 		}
 
-		next := proxyPass + p.NextPort
+		next := cfg.proxyPass + p.NextPort
 		if strings.Contains(fileContent, "#"+next) {
 			fileContent = strings.Replace(fileContent, "#"+next, next, 1)
 		}
 	}
 
-	err = os.WriteFile(cfg.filePath, []byte(fileContent), fileMode) //#nosec G306 -- This is a false positive
+	err = os.WriteFile(cfg.filePath, []byte(fileContent), fileMode) //#nosec G306,G703 -- This is a false positive
 	if err != nil {
 		return domain.ExecResult{
 			Status: domain.ExecResultStatusError,

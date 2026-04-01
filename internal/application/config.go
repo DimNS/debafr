@@ -33,7 +33,15 @@ type TomlConfig struct {
 }
 
 type AppConfig struct {
-	ProjectName string `toml:"project_name"`
+	ProjectName     string         `toml:"project_name"`
+	ProxyPassPrefix string         `toml:"proxy_pass_prefix"`
+	LocationPorts   []LocationPort `toml:"location_ports"`
+}
+
+type LocationPort struct {
+	Location  string `toml:"location"`
+	BluePort  string `toml:"blue_port"`
+	GreenPort string `toml:"green_port"`
 }
 
 type FilesConfig struct {
@@ -76,25 +84,45 @@ func (tc *TomlConfig) Validate() error {
 		return errors.New("app name is empty")
 	}
 
+	if tc.App.ProxyPassPrefix == "" {
+		return errors.New("proxy pass prefix is empty")
+	}
+
+	if len(tc.App.LocationPorts) == 0 {
+		return errors.New("location ports is empty")
+	}
+
 	return nil
 }
 
 func (tc *TomlConfig) GetDomainConfig() domain.AppConfig {
+	locPorts := make([]domain.AppConfigLocationPort, len(tc.App.LocationPorts))
+	for i, locPort := range tc.App.LocationPorts {
+		locPorts[i] = domain.AppConfigLocationPort{
+			Location:  locPort.Location,
+			BluePort:  locPort.BluePort,
+			GreenPort: locPort.GreenPort,
+		}
+	}
+
 	return domain.AppConfig{
-		Files: domain.FilesConfig{
+		ProjectName:     tc.App.ProjectName,
+		ProxyPassPrefix: tc.App.ProxyPassPrefix,
+		LocationPorts:   locPorts,
+		Files: domain.AppConfigFiles{
 			ComposeBlue:  tc.Files.ComposeBlue,
 			ComposeGreen: tc.Files.ComposeGreen,
 			NginxConf:    tc.Files.NginxConf,
 		},
-		BinPaths: domain.BinPathsConfig{
+		BinPaths: domain.AppConfigBinPaths{
 			Docker: tc.BinPaths.Docker,
 			Curl:   tc.BinPaths.Curl,
 			Nginx:  tc.BinPaths.Nginx,
 		},
-		Timeouts: domain.TimeoutsConfig{
+		Timeouts: domain.AppConfigTimeouts{
 			Default: time.Duration(tc.Timeouts.Default),
 		},
-		Healthcheck: domain.HealthcheckConfig{
+		Healthcheck: domain.AppConfigHealthcheck{
 			MaxRetries: tc.Healthcheck.MaxRetries,
 			RetryDelay: time.Duration(tc.Healthcheck.RetryDelay),
 		},

@@ -1,5 +1,11 @@
 [app]
 project_name = "myapp"
+proxy_pass_prefix = "proxy_pass http://127.0.0.1:"
+location_ports = [
+    {location = "/api", blue_port = "3001", green_port = "3011"},
+    {location = "/ws",  blue_port = "3003", green_port = "3013"},
+    {location = "/",    blue_port = "3002", green_port = "3012"},
+]
 
 [files]
 compose_blue = "myapp_compose.blue.yaml"

@@ -32,8 +32,26 @@ func TestLoadConfiguration(t *testing.T) {
 					return fromEnv == "true"
 				}(),
 				Toml: TomlConfig{
-					App: AppConfig{
-						ProjectName: "myapp",
+					App: AppConfig{ //nolint:gosec // ignore
+						ProjectName:     "myapp",
+						ProxyPassPrefix: "proxy_pass http://127.0.0.1:",
+						LocationPorts: []LocationPort{
+							{
+								Location:  "/api",
+								BluePort:  "3001",
+								GreenPort: "3011",
+							},
+							{
+								Location:  "/ws",
+								BluePort:  "3003",
+								GreenPort: "3013",
+							},
+							{
+								Location:  "/",
+								BluePort:  "3002",
+								GreenPort: "3012",
+							},
+						},
 					},
 					Files: FilesConfig{
 						ComposeBlue:  "compose.blue.yaml",
@@ -65,8 +83,26 @@ func TestLoadConfiguration(t *testing.T) {
 			want: &Configuration{
 				DevMode: true,
 				Toml: TomlConfig{
-					App: AppConfig{
-						ProjectName: "myapp",
+					App: AppConfig{ //nolint:gosec // ignore
+						ProjectName:     "myapp",
+						ProxyPassPrefix: "proxy_pass http://127.0.0.1:",
+						LocationPorts: []LocationPort{
+							{
+								Location:  "/api",
+								BluePort:  "3001",
+								GreenPort: "3011",
+							},
+							{
+								Location:  "/ws",
+								BluePort:  "3003",
+								GreenPort: "3013",
+							},
+							{
+								Location:  "/",
+								BluePort:  "3002",
+								GreenPort: "3012",
+							},
+						},
 					},
 					Files: FilesConfig{
 						ComposeBlue:  "myapp_compose.blue.yaml",

@@ -51,7 +51,7 @@ type Summary struct {
 	nextVersion  string
 	nextStrategy domain.Strategy
 
-	ports []LocationPort
+	currNextPorts []CurrNextPort
 
 	deployLaunching   *bool
 	deployHealthcheck *bool
@@ -63,7 +63,7 @@ type Summary struct {
 	styles styles
 }
 
-type LocationPort struct {
+type CurrNextPort struct {
 	Location    string
 	CurrentPort string
 	NextPort    string
@@ -105,7 +105,7 @@ func NewSummary(cfg SummaryConfig) *Summary {
 		nextVersion:  "???",
 		nextStrategy: "???",
 
-		ports: nil,
+		currNextPorts: nil,
 
 		styles: styles{
 			category: lipgloss.NewStyle().
@@ -220,24 +220,12 @@ func (s *Summary) GetDir() string {
 	return s.currentDir
 }
 
-func (s *Summary) GetFilenameComposeBlue() string {
-	return s.filenameComposeBlue
-}
-
-func (s *Summary) GetFilenameComposeGreen() string {
-	return s.filenameComposeGreen
-}
-
 func (s *Summary) GetFilenameNginxConf() string {
 	return s.filenameNginxConf
 }
 
 func (s *Summary) GetCurrentVersion() string {
 	return s.currentVersion
-}
-
-func (s *Summary) GetCurrentStrategy() domain.Strategy {
-	return s.currentStrategy
 }
 
 func (s *Summary) GetNextVersion() string {
@@ -248,8 +236,8 @@ func (s *Summary) GetNextStrategy() domain.Strategy {
 	return s.nextStrategy
 }
 
-func (s *Summary) GetPorts() []LocationPort {
-	return s.ports
+func (s *Summary) GetPorts() []CurrNextPort {
+	return s.currNextPorts
 }
 
 func (s *Summary) UpdateDir(value string) {
@@ -292,8 +280,8 @@ func (s *Summary) UpdateNextStrategy(value domain.Strategy) {
 	s.nextStrategy = value
 }
 
-func (s *Summary) UpdatePorts(ports []LocationPort) {
-	s.ports = ports
+func (s *Summary) UpdatePorts(ports []CurrNextPort) {
+	s.currNextPorts = ports
 }
 
 func (s *Summary) UpdateDeployLaunching(value bool) {
@@ -325,7 +313,7 @@ func (s *Summary) boolToIcon(b *bool) string {
 }
 
 func (s *Summary) portsView() string {
-	if len(s.ports) == 0 {
+	if len(s.currNextPorts) == 0 {
 		return ""
 	}
 
@@ -333,10 +321,11 @@ func (s *Summary) portsView() string {
 		s.styles.category.Render("Ports"),
 	}
 
-	for _, p := range s.ports {
+	for _, p := range s.currNextPorts {
 		loc := s.styles.title.Render(p.Location + ": ")
 		cp := s.styles.text.Render(p.CurrentPort)
 		np := s.styles.text.Render(p.NextPort)
+
 		lines = append(lines,
 			loc+cp+" >> "+np,
 		)
