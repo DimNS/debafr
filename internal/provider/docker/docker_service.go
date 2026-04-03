@@ -95,7 +95,7 @@ func (d *Docker) GetCurrentDeploy(needProjectName string) (currVersion string, c
 	}
 
 	for k := range versions {
-		currVersion = "v" + k
+		currVersion = k
 		break
 	}
 
