@@ -41,6 +41,20 @@ nginx.conf >> /etc/nginx/sites-available/project.ru
     ln -sf /etc/nginx/sites-available/project.ru /opt/project/nginx.conf
     ```
 2. Создайте конфигурационный файл проекта `/opt/project/debafr.toml`, пример можно посмотреть здесь: `.dev/debafr.toml`
+   | Параметр | Тип | Значение по умолчанию | Обязательное |
+   |----------|------|------------------------|---------------|
+   | `app.project_name` | string | `"myapp"` | ✅ Да |
+   | `app.proxy_pass_prefix` | string | `"proxy_pass http://127.0.0.1:"` | ✅ Да |
+   | `app.location_ports` | array of objects | `[{location="/api", blue_port="3001", green_port="3011"}, ...]` | ✅ Да |
+   | `files.compose_blue` | string | `"compose.blue.yaml"` | ❌ Нет |
+   | `files.compose_green` | string | `"compose.green.yaml"` | ❌ Нет |
+   | `files.nginx_conf` | string | `"nginx.conf"` | ❌ Нет |
+   | `binpaths.docker` | string | `"/usr/bin/docker"` | ❌ Нет |
+   | `binpaths.curl` | string | `"/usr/bin/curl"` | ❌ Нет |
+   | `binpaths.nginx` | string | `"/usr/sbin/nginx"` | ❌ Нет |
+   | `timeouts.default` | string | `"30s"` | ❌ Нет |
+   | `healthcheck.max_retries` | integer | `10` | ❌ Нет |
+   | `healthcheck.retry_delay` | string | `"3s"` | ❌ Нет |
 3. Запустите приложение
     ```bash
     debafr
