@@ -25,7 +25,10 @@ type Docker struct {
 
 // New возвращает новый экземпляр Docker.
 func New(devMode bool) (*Docker, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := client.NewClientWithOpts(
+		client.FromEnv,
+		client.WithAPIVersionNegotiation(),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("client.NewClientWithOpts: %v", err)
 	}
