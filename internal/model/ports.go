@@ -16,7 +16,11 @@ func NewExecPorts(dic DIC) *Exec {
 		Name: "Parse ports",
 
 		StartFunc: func() domain.ExecResult {
-			currNextPorts := parseCurrNextPorts(cfg.LocationPorts, summary.GetNextStrategy())
+			currNextPorts := parseCurrNextPorts(
+				cfg.LocationPorts,
+				summary.GetNextStrategy(),
+				summary.GetMode(),
+			)
 			if len(currNextPorts) == 0 {
 				return domain.ExecResult{
 					Status: domain.ExecResultStatusError,
@@ -50,7 +54,11 @@ func NewExecPorts(dic DIC) *Exec {
 	})
 }
 
-func parseCurrNextPorts(locPorts []domain.AppConfigLocationPort, nextStrategy domain.Strategy) []CurrNextPort {
+func parseCurrNextPorts(
+	locPorts []domain.AppConfigLocationPort,
+	nextStrategy domain.Strategy,
+	mode domain.Mode,
+) []CurrNextPort {
 	if len(locPorts) == 0 {
 		return nil
 	}
@@ -65,6 +73,10 @@ func parseCurrNextPorts(locPorts []domain.AppConfigLocationPort, nextStrategy do
 		} else {
 			cp = item.BluePort
 			np = item.GreenPort
+		}
+
+		if mode == domain.ModeInstall {
+			cp = EmptyValue
 		}
 
 		currNextPorts = append(currNextPorts, CurrNextPort{
