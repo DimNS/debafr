@@ -88,7 +88,7 @@ func healthcheck(
 				Status: domain.ExecResultStatusSuccess,
 				Err:    nil,
 				Output: fmt.Sprintf(
-					"###  Frontend State: %s (%s)\n### Backend State: %s (%s)",
+					"### Frontend State: %s (%s)\n### Backend State: %s (%s)",
 					frontendState.Status,
 					frontendState.Health,
 					backendState.Status,
@@ -101,7 +101,7 @@ func healthcheck(
 			Status: domain.ExecResultStatusError,
 			Err:    errors.New("not ready"),
 			Output: fmt.Sprintf(
-				"###  Frontend State: %s (%s)\n### Backend State: %s (%s)\n(attempt %d/%d)",
+				"### Frontend State: %s (%s)\n### Backend State: %s (%s)\n(attempt %d/%d)",
 				frontendState.Status,
 				frontendState.Health,
 				backendState.Status,
