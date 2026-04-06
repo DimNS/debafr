@@ -7,6 +7,12 @@ location_ports = [
     {location = "/",    blue_port = "3002", green_port = "3012"},
 ]
 
+[docker_login]
+enabled = true
+registry = "ghcr.io"
+username = "username2"
+password = "password2"
+
 [files]
 compose_blue = "myapp_compose.blue.yaml"
 compose_green = "myapp_compose.green.yaml"

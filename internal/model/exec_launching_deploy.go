@@ -33,6 +33,23 @@ func NewExecLaunchingDeploy(dic DIC) *Exec {
 				}
 			}
 
+			if cfg.DockerLogin.Enabled {
+				loginCmd := exec.CommandContext(
+					ctx,
+					cfg.BinPaths.Docker,
+					"login",
+					cfg.DockerLogin.Registry,
+					"-u", cfg.DockerLogin.Username,
+					"-p", cfg.DockerLogin.Password,
+				)
+				if err := loginCmd.Run(); err != nil {
+					return domain.ExecResult{
+						Status: domain.ExecResultStatusError,
+						Err:    fmt.Errorf("docker login failed: %w", err),
+					}
+				}
+			}
+
 			command := exec.CommandContext(
 				ctx,
 				cfg.BinPaths.Docker,

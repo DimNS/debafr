@@ -6,6 +6,7 @@ type AppConfig struct {
 	ProjectName     string
 	ProxyPassPrefix string
 	LocationPorts   []AppConfigLocationPort
+	DockerLogin     AppConfigDockerLogin
 	Files           AppConfigFiles
 	BinPaths        AppConfigBinPaths
 	Timeouts        AppConfigTimeouts
@@ -16,6 +17,13 @@ type AppConfigLocationPort struct {
 	Location  string
 	BluePort  string
 	GreenPort string
+}
+
+type AppConfigDockerLogin struct {
+	Enabled  bool
+	Registry string
+	Username string
+	Password string
 }
 
 type AppConfigFiles struct {

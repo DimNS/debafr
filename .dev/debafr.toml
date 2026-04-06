@@ -16,6 +16,12 @@ location_ports = [
     {location = "/",    blue_port = "3002", green_port = "3012"},
 ]
 
+[docker_login]
+enabled = false
+registry = ""
+username = ""
+password = ""
+
 [files]
 compose_blue = "compose.blue.yaml"
 compose_green = "compose.green.yaml"

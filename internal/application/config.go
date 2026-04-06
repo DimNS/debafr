@@ -26,6 +26,7 @@ type Configuration struct {
 
 type TomlConfig struct {
 	App         AppConfig         `toml:"app"`
+	DockerLogin DockerLoginConfig `toml:"docker_login"`
 	Files       FilesConfig       `toml:"files"`
 	BinPaths    BinPathsConfig    `toml:"binpaths"`
 	Timeouts    TimeoutsConfig    `toml:"timeouts"`
@@ -42,6 +43,13 @@ type LocationPort struct {
 	Location  string `toml:"location"`
 	BluePort  string `toml:"blue_port"`
 	GreenPort string `toml:"green_port"`
+}
+
+type DockerLoginConfig struct {
+	Enabled  bool   `toml:"enabled"`
+	Registry string `toml:"registry"`
+	Username string `toml:"username"`
+	Password string `toml:"password"`
 }
 
 type FilesConfig struct {
@@ -109,6 +117,12 @@ func (tc *TomlConfig) GetDomainConfig() domain.AppConfig {
 		ProjectName:     tc.App.ProjectName,
 		ProxyPassPrefix: tc.App.ProxyPassPrefix,
 		LocationPorts:   locPorts,
+		DockerLogin: domain.AppConfigDockerLogin{
+			Enabled:  tc.DockerLogin.Enabled,
+			Registry: tc.DockerLogin.Registry,
+			Username: tc.DockerLogin.Username,
+			Password: tc.DockerLogin.Password,
+		},
 		Files: domain.AppConfigFiles{
 			ComposeBlue:  tc.Files.ComposeBlue,
 			ComposeGreen: tc.Files.ComposeGreen,

@@ -53,6 +53,7 @@ func TestLoadConfiguration(t *testing.T) {
 							},
 						},
 					},
+					DockerLogin: DockerLoginConfig{},
 					Files: FilesConfig{
 						ComposeBlue:  "compose.blue.yaml",
 						ComposeGreen: "compose.green.yaml",
@@ -103,6 +104,12 @@ func TestLoadConfiguration(t *testing.T) {
 								GreenPort: "3012",
 							},
 						},
+					},
+					DockerLogin: DockerLoginConfig{
+						Enabled:  true,
+						Registry: "ghcr.io",
+						Username: "username2",
+						Password: "password2",
 					},
 					Files: FilesConfig{
 						ComposeBlue:  "myapp_compose.blue.yaml",
