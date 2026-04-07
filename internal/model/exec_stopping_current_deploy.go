@@ -2,11 +2,14 @@ package model
 
 import (
 	"debafr/internal/domain"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func NewExecStoppingCurrentDeploy(dic DIC) *Exec {
 	summary := dic.GetSummary()
 	dockerService := dic.GetDockerService()
+	cfg := dic.GetAppConfig()
 
 	return NewExec(dic, domain.ExecConfig{
 		Name: "Stopping current deploy",
@@ -53,6 +56,12 @@ func NewExecStoppingCurrentDeploy(dic DIC) *Exec {
 			summary.UpdateShutdownStopping(false)
 		},
 
-		NextCmd: NewComplete(dic),
+		NextCmd: func() tea.Model {
+			if cfg.VictoriaMetrics.Enabled {
+				return NewExecWriteVictoriaMetricsTargets(dic)
+			}
+
+			return NewComplete(dic)
+		}(),
 	})
 }

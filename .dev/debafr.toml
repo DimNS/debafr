@@ -16,6 +16,23 @@ location_ports = [
     {location = "/",    blue_port = "3002", green_port = "3012"},
 ]
 
+# Включение генерации targets для victoriametrics
+# после переключения сервиса
+#
+# Использование:
+# scrape_configs:
+#   - job_name: "myapp_metrics"
+#     metrics_path: /metrics
+#     file_sd_configs:
+#       - files:
+#           - "/etc/victoriametrics/targets/myapp.json"
+#         refresh_interval: 10s
+[app.victoriametrics]
+enabled = false
+targets_output_file_path = ""
+target_blue = ""
+target_green = ""
+
 [docker_login]
 enabled = false
 registry = ""

@@ -46,6 +46,10 @@ nginx.conf >> /etc/nginx/sites-available/project.ru
    | `app.project_name` | string | `"myapp"` | ✅ Да |
    | `app.proxy_pass_prefix` | string | `"proxy_pass http://127.0.0.1:"` | ✅ Да |
    | `app.location_ports` | array of objects | `[{location="/api", blue_port="3001", green_port="3011"}, ...]` | ✅ Да |
+   | `app.victoriametrics.enabled` | bool | `false` | ❌ Нет |
+   | `app.victoriametrics.targets_output_file_path` | string | `""` | ❌ Нет |
+   | `app.victoriametrics.target_blue` | string | `""` | ❌ Нет |
+   | `app.victoriametrics.target_green` | string | `""` | ❌ Нет |
    | `docker_login.enabled` | bool | `false` | ❌ Нет |
    | `docker_login.registry` | string | `""` | ❌ Нет |
    | `docker_login.username` | string | `""` | ❌ Нет |

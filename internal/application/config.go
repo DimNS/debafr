@@ -34,15 +34,23 @@ type TomlConfig struct {
 }
 
 type AppConfig struct {
-	ProjectName     string         `toml:"project_name"`
-	ProxyPassPrefix string         `toml:"proxy_pass_prefix"`
-	LocationPorts   []LocationPort `toml:"location_ports"`
+	ProjectName     string          `toml:"project_name"`
+	ProxyPassPrefix string          `toml:"proxy_pass_prefix"`
+	LocationPorts   []LocationPort  `toml:"location_ports"`
+	VictoriaMetrics VictoriaMetrics `toml:"victoriametrics"`
 }
 
 type LocationPort struct {
 	Location  string `toml:"location"`
 	BluePort  string `toml:"blue_port"`
 	GreenPort string `toml:"green_port"`
+}
+
+type VictoriaMetrics struct {
+	Enabled               bool   `toml:"enabled"`
+	TargetsOutputFilePath string `toml:"targets_output_file_path"`
+	TargetBlue            string `toml:"target_blue"`
+	TargetGreen           string `toml:"target_green"`
 }
 
 type DockerLoginConfig struct {
@@ -117,6 +125,12 @@ func (tc *TomlConfig) GetDomainConfig() domain.AppConfig {
 		ProjectName:     tc.App.ProjectName,
 		ProxyPassPrefix: tc.App.ProxyPassPrefix,
 		LocationPorts:   locPorts,
+		VictoriaMetrics: domain.AppConfigVictoriaMetrics{
+			Enabled:               tc.App.VictoriaMetrics.Enabled,
+			TargetsOutputFilePath: tc.App.VictoriaMetrics.TargetsOutputFilePath,
+			TargetBlue:            tc.App.VictoriaMetrics.TargetBlue,
+			TargetGreen:           tc.App.VictoriaMetrics.TargetGreen,
+		},
 		DockerLogin: domain.AppConfigDockerLogin{
 			Enabled:  tc.DockerLogin.Enabled,
 			Registry: tc.DockerLogin.Registry,

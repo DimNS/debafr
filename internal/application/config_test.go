@@ -53,7 +53,6 @@ func TestLoadConfiguration(t *testing.T) {
 							},
 						},
 					},
-					DockerLogin: DockerLoginConfig{},
 					Files: FilesConfig{
 						ComposeBlue:  "compose.blue.yaml",
 						ComposeGreen: "compose.green.yaml",
@@ -103,6 +102,12 @@ func TestLoadConfiguration(t *testing.T) {
 								BluePort:  "3002",
 								GreenPort: "3012",
 							},
+						},
+						VictoriaMetrics: VictoriaMetrics{
+							Enabled:               true,
+							TargetsOutputFilePath: "myapp.json",
+							TargetBlue:            "myapp_blue_api:8080",
+							TargetGreen:           "myapp_green_api:8080",
 						},
 					},
 					DockerLogin: DockerLoginConfig{
