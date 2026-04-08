@@ -41,14 +41,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifacts
-          path: |
-            dist/*.tar.gz
-            dist/*checksums.txt
-
       - name: Generate Changelog
         id: changelog
         uses: requarks/changelog-action@v1
@@ -65,6 +57,6 @@ jobs:
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.changes }}
-          artifacts: "dist/*.tar.gz,dist/debafr_*/*"
+          artifacts: "dist/*.tar.gz,dist/*checksums.txt"
           artifactContentType: application/octet-stream
           token: ${{ secrets.GITHUB_TOKEN }}
