@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -87,14 +88,22 @@ func (d *Docker) GetCurrentDeploy(needProjectName string) (currVersion string, c
 		return "", "", errors.New("version not found")
 	}
 	if len(versions) > 1 {
-		return "", "", errors.New("multiple versions found")
+		vs := make([]string, 0, len(versions))
+		for k := range versions {
+			vs = append(vs, k)
+		}
+		return "", "", fmt.Errorf("multiple versions found: %s", strings.Join(vs, ", "))
 	}
 
 	if len(strategies) == 0 {
 		return "", "", errors.New("strategy not found")
 	}
 	if len(strategies) > 1 {
-		return "", "", errors.New("multiple strategies found")
+		ss := make([]string, 0, len(strategies))
+		for k := range strategies {
+			ss = append(ss, k.String())
+		}
+		return "", "", fmt.Errorf("multiple strategies found: %s", strings.Join(ss, ", "))
 	}
 
 	for k := range versions {
