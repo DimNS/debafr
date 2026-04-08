@@ -37,7 +37,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: build --clean
+          args: release --clean --skip=publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -45,7 +45,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: artifacts
-          path: dist/*
+          path: |
+            dist/*.tar.gz
+            dist/*checksums.txt
 
       - name: Generate Changelog
         id: changelog
@@ -63,6 +65,6 @@ jobs:
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.changes }}
-          artifacts: "dist/*"
+          artifacts: "dist/*.tar.gz,dist/debafr_*/*"
           artifactContentType: application/octet-stream
           token: ${{ secrets.GITHUB_TOKEN }}
