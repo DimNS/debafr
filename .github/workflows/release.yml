@@ -1,4 +1,4 @@
-name: goreleaser
+name: release
 
 on:
   workflow_run:
@@ -14,7 +14,7 @@ permissions:
   contents: write
 
 jobs:
-  goreleaser:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -37,9 +37,15 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean
+          args: build --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts
+          path: dist/*
 
       - name: Generate Changelog
         id: changelog
@@ -57,4 +63,6 @@ jobs:
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.changes }}
+          artifacts: "dist/*"
+          artifactContentType: application/octet-stream
           token: ${{ secrets.GITHUB_TOKEN }}
