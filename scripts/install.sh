@@ -25,7 +25,7 @@ set -euo pipefail
 #==============================================================================
 # Configuration
 #==============================================================================
-DEFAULT_VERSION="v0.2.0"
+DEFAULT_VERSION="v0.4.4"
 HOME_BIN_DIR="${HOME}/.local/bin"
 REPO_URL="https://github.com/dimns/debafr"
 
