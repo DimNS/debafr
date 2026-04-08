@@ -188,10 +188,6 @@ func loadTomlConfig(name string) (TomlConfig, error) {
 
 	data, err := root.ReadFile(name)
 	if err != nil {
-		if os.IsNotExist(err) {
-			SetDefaults(&tomlConfig)
-			return tomlConfig, nil
-		}
 		return tomlConfig, fmt.Errorf("read toml file: %w", err)
 	}
 
