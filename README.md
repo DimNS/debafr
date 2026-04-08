@@ -27,20 +27,18 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
 
 > Обратите внимание команды выполняются для каталога: `/opt/project`
 
-Структура каталога `/opt/project`
-
-```
-compose.blue.yaml
-compose.green.yaml
-debafr.toml
-nginx.conf >> /etc/nginx/sites-available/project.ru
-```
-
-1. Создайте символическую ссылку на файл конфига nginx
+1. Структура каталога `/opt/project`
+    ```bash
+    compose.blue.yaml
+    compose.green.yaml
+    debafr.toml
+    nginx.conf >> /etc/nginx/sites-available/project.ru
+    ```
+2. Создайте символическую ссылку на файл конфига nginx
     ```bash
     ln -sf /etc/nginx/sites-available/project.ru /opt/project/nginx.conf
     ```
-2. Создайте конфигурационный файл проекта `/opt/project/debafr.toml`, пример можно посмотреть здесь: `.dev/debafr.toml`
+3. Создайте конфигурационный файл проекта `/opt/project/debafr.toml`, пример можно посмотреть здесь: `.dev/debafr.toml`
    | Параметр | Тип | Значение по умолчанию | Обязательное |
    |----------|------|------------------------|---------------|
    | `app.project_name` | string | `"myapp"` | ✅ Да |
@@ -63,7 +61,7 @@ nginx.conf >> /etc/nginx/sites-available/project.ru
    | `timeouts.default` | string | `"30s"` | ❌ Нет |
    | `healthcheck.max_retries` | integer | `10` | ❌ Нет |
    | `healthcheck.retry_delay` | string | `"3s"` | ❌ Нет |
-3. Запустите приложение
+4. Запустите приложение
     ```bash
     debafr
     ```
