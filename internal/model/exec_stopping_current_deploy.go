@@ -1,9 +1,9 @@
 package model
 
 import (
-	"debafr/internal/domain"
-
 	tea "github.com/charmbracelet/bubbletea"
+
+	"debafr/internal/domain"
 )
 
 func NewExecStoppingCurrentDeploy(dic DIC) *Exec {

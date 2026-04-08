@@ -1,9 +1,10 @@
 package model
 
 import (
-	"debafr/internal/domain"
 	"encoding/json"
 	"os"
+
+	"debafr/internal/domain"
 )
 
 type TargetGroup struct {
@@ -45,7 +46,7 @@ func NewExecWriteVictoriaMetricsTargets(dic DIC) *Exec {
 			}
 
 			tmpFile := cfg.VictoriaMetrics.TargetsOutputFilePath + ".tmp"
-			if err := os.WriteFile(tmpFile, jsonData, 0644); err != nil {
+			if err := os.WriteFile(tmpFile, jsonData, 0644); err != nil { //nolint:gosec,mnd // It's ok
 				return domain.ExecResult{
 					Status: domain.ExecResultStatusError,
 					Err:    err,
