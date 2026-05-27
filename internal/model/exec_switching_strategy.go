@@ -85,13 +85,13 @@ func switchNginx(cfg switchConfig) domain.ExecResult {
 		if p.CurrentPort != EmptyValue {
 			curr := cfg.proxyPass + p.CurrentPort
 			if !strings.Contains(fileContent, "#"+curr) {
-				fileContent = strings.Replace(fileContent, curr, "#"+curr, 1)
+				fileContent = strings.ReplaceAll(fileContent, curr, "#"+curr)
 			}
 		}
 
 		next := cfg.proxyPass + p.NextPort
 		if strings.Contains(fileContent, "#"+next) {
-			fileContent = strings.Replace(fileContent, "#"+next, next, 1)
+			fileContent = strings.ReplaceAll(fileContent, "#"+next, next)
 		}
 	}
 
