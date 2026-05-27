@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	defaultCmdTimeout = 30 * time.Second
+	defaultCmdTimeout = 60 * time.Second
 	defaultRetryDelay = 3 * time.Second
 	defaultMaxRetries = 10
 )
