@@ -6,6 +6,7 @@ type AppConfig struct {
 	ProjectName     string
 	ProxyPassPrefix string
 	LocationPorts   []AppConfigLocationPort
+	Images          []string
 	VictoriaMetrics AppConfigVictoriaMetrics
 	DockerLogin     AppConfigDockerLogin
 	Files           AppConfigFiles

@@ -14,7 +14,7 @@ import (
 
 const (
 	defaultCmdTimeout = 60 * time.Second
-	defaultRetryDelay = 3 * time.Second
+	defaultRetryDelay = 5 * time.Second
 	defaultMaxRetries = 10
 )
 
@@ -37,6 +37,7 @@ type AppConfig struct {
 	ProjectName     string          `toml:"project_name"`
 	ProxyPassPrefix string          `toml:"proxy_pass_prefix"`
 	LocationPorts   []LocationPort  `toml:"location_ports"`
+	Images          []string        `toml:"images"`
 	VictoriaMetrics VictoriaMetrics `toml:"victoriametrics"`
 }
 
@@ -108,6 +109,10 @@ func (tc *TomlConfig) Validate() error {
 		return errors.New("location ports is empty")
 	}
 
+	if len(tc.App.Images) == 0 {
+		return errors.New("images is empty")
+	}
+
 	return nil
 }
 
@@ -125,6 +130,7 @@ func (tc *TomlConfig) GetDomainConfig() domain.AppConfig {
 		ProjectName:     tc.App.ProjectName,
 		ProxyPassPrefix: tc.App.ProxyPassPrefix,
 		LocationPorts:   locPorts,
+		Images:          tc.App.Images,
 		VictoriaMetrics: domain.AppConfigVictoriaMetrics{
 			Enabled:               tc.App.VictoriaMetrics.Enabled,
 			TargetsOutputFilePath: tc.App.VictoriaMetrics.TargetsOutputFilePath,

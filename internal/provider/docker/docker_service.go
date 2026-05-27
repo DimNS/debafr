@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 
 	"debafr/internal/domain"
@@ -191,6 +192,22 @@ func (d *Docker) ContainerStop(containerID string) error {
 	defer cancel()
 
 	err := d.cli.ContainerStop(ctx, containerID, container.StopOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to stop container: %v", err)
+	}
+
+	return nil
+}
+
+func (d *Docker) ImagePull(img string) error {
+	if d.devMode {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	_, err := d.cli.ImagePull(ctx, img, image.PullOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to stop container: %v", err)
 	}

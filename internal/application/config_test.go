@@ -52,6 +52,10 @@ func TestLoadConfiguration(t *testing.T) {
 								GreenPort: "3012",
 							},
 						},
+						Images: []string{
+							"ghcr.io/myapp/api",
+							"ghcr.io/myapp/ui",
+						},
 					},
 					Files: FilesConfig{
 						ComposeBlue:  "compose.blue.yaml",
@@ -64,11 +68,11 @@ func TestLoadConfiguration(t *testing.T) {
 						Nginx:  "/usr/sbin/nginx",
 					},
 					Timeouts: TimeoutsConfig{
-						Default: Duration(30 * time.Second),
+						Default: Duration(60 * time.Second),
 					},
 					Healthcheck: HealthcheckConfig{
 						MaxRetries: 10,
-						RetryDelay: Duration(3 * time.Second),
+						RetryDelay: Duration(5 * time.Second),
 					},
 				},
 			},
@@ -103,6 +107,10 @@ func TestLoadConfiguration(t *testing.T) {
 								GreenPort: "3012",
 							},
 						},
+						Images: []string{
+							"ghcr.io/myapp/api",
+							"ghcr.io/myapp/ui",
+						},
 						VictoriaMetrics: VictoriaMetrics{
 							Enabled:               true,
 							TargetsOutputFilePath: "myapp.json",
@@ -127,11 +135,11 @@ func TestLoadConfiguration(t *testing.T) {
 						Nginx:  "nginx",
 					},
 					Timeouts: TimeoutsConfig{
-						Default: Duration(60 * time.Second),
+						Default: Duration(120 * time.Second),
 					},
 					Healthcheck: HealthcheckConfig{
 						MaxRetries: 5,
-						RetryDelay: Duration(5 * time.Second),
+						RetryDelay: Duration(10 * time.Second),
 					},
 				},
 			},

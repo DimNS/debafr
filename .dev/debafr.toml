@@ -15,6 +15,10 @@ location_ports = [
     {location = "/ws",  blue_port = "3003", green_port = "3013"},
     {location = "/",    blue_port = "3002", green_port = "3012"},
 ]
+images = [
+    "ghcr.io/capuchinapp/cloud/api",
+    "ghcr.io/capuchinapp/cloud/ui",
+]
 
 # Включение генерации targets для victoriametrics
 # после переключения сервиса
@@ -50,8 +54,8 @@ curl = "/usr/bin/curl"
 nginx = "/usr/sbin/nginx"
 
 [timeouts]
-default = "30s"
+default = "60s"
 
 [healthcheck]
 max_retries = 10
-retry_delay = "3s"
+retry_delay = "5s"

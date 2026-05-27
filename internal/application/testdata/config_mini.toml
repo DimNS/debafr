@@ -6,3 +6,7 @@ location_ports = [
     {location = "/ws",  blue_port = "3003", green_port = "3013"},
     {location = "/",    blue_port = "3002", green_port = "3012"},
 ]
+images = [
+    "ghcr.io/myapp/api",
+    "ghcr.io/myapp/ui",
+]

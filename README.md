@@ -44,6 +44,7 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
    | `app.project_name` | string | `"myapp"` | ✅ Да |
    | `app.proxy_pass_prefix` | string | `"proxy_pass http://127.0.0.1:"` | ✅ Да |
    | `app.location_ports` | array of objects | `[{location="/api", blue_port="3001", green_port="3011"}, ...]` | ✅ Да |
+   | `app.images` | array of string | `["ghcr.io/app/api", "ghcr.io/app/ui", ]` | ✅ Да |
    | `app.victoriametrics.enabled` | bool | `false` | ❌ Нет |
    | `app.victoriametrics.targets_output_file_path` | string | `""` | ❌ Нет |
    | `app.victoriametrics.target_blue` | string | `""` | ❌ Нет |
@@ -58,9 +59,9 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
    | `binpaths.docker` | string | `"/usr/bin/docker"` | ❌ Нет |
    | `binpaths.curl` | string | `"/usr/bin/curl"` | ❌ Нет |
    | `binpaths.nginx` | string | `"/usr/sbin/nginx"` | ❌ Нет |
-   | `timeouts.default` | string | `"30s"` | ❌ Нет |
+   | `timeouts.default` | string | `"60s"` | ❌ Нет |
    | `healthcheck.max_retries` | integer | `10` | ❌ Нет |
-   | `healthcheck.retry_delay` | string | `"3s"` | ❌ Нет |
+   | `healthcheck.retry_delay` | string | `"5s"` | ❌ Нет |
 4. Запустите приложение
     ```bash
     debafr

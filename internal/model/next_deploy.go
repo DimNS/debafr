@@ -55,7 +55,7 @@ func (c *NextDeploy) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		cmds = append(cmds, func() tea.Msg {
 			return NextCmdMsg{
-				NextCmd: NewExecLaunchingDeploy(c.dic),
+				NextCmd: NewExecPullImage(c.dic),
 			}
 		})
 	}

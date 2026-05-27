@@ -6,6 +6,10 @@ location_ports = [
     {location = "/ws",  blue_port = "3003", green_port = "3013"},
     {location = "/",    blue_port = "3002", green_port = "3012"},
 ]
+images = [
+    "ghcr.io/myapp/api",
+    "ghcr.io/myapp/ui",
+]
 
 # Включение генерации targets для victoriametrics
 # после переключения сервиса
@@ -41,8 +45,8 @@ curl = "curl"
 nginx = "nginx"
 
 [timeouts]
-default = "60s"
+default = "120s"
 
 [healthcheck]
 max_retries = 5
-retry_delay = "5s"
+retry_delay = "10s"
