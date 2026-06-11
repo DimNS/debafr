@@ -47,7 +47,10 @@ func (d *Docker) GetCurrentDeploy(needProjectName string) (currVersion string, c
 		return "v0.8.0", "blue", nil
 	}
 
-	containers, err := d.cli.ContainerList(context.Background(), container.ListOptions{
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	containers, err := d.cli.ContainerList(ctx, container.ListOptions{
 		All: true, // Include stopped containers too
 	})
 	if err != nil {
@@ -131,7 +134,10 @@ func (d *Docker) GetContainers(projectName string, version string) (frontend, ba
 			}, nil
 	}
 
-	containers, err := d.cli.ContainerList(context.Background(), container.ListOptions{
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	containers, err := d.cli.ContainerList(ctx, container.ListOptions{
 		All: true, // Include stopped containers too
 	})
 	if err != nil {
@@ -166,7 +172,10 @@ func (d *Docker) GetState(containerID string) (domain.ContainerState, error) {
 		}, nil
 	}
 
-	inspect, err := d.cli.ContainerInspect(context.Background(), containerID)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	inspect, err := d.cli.ContainerInspect(ctx, containerID)
 	if err != nil {
 		return domain.ContainerState{}, fmt.Errorf("failed to inspect container: %v", err)
 	}
@@ -199,17 +208,14 @@ func (d *Docker) ContainerStop(containerID string) error {
 	return nil
 }
 
-func (d *Docker) ImagePull(img string) error {
+func (d *Docker) ImagePull(ctx context.Context, img string, pullOpts image.PullOptions) error {
 	if d.devMode {
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-	defer cancel()
-
-	_, err := d.cli.ImagePull(ctx, img, image.PullOptions{})
+	_, err := d.cli.ImagePull(ctx, img, pullOpts)
 	if err != nil {
-		return fmt.Errorf("failed to stop container: %v", err)
+		return fmt.Errorf("failed to pull image: %v", err)
 	}
 
 	return nil

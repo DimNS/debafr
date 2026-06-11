@@ -2,11 +2,14 @@ package model
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
-	"os/exec"
 	"strings"
 
 	"debafr/internal/domain"
+
+	"github.com/docker/docker/api/types/image"
 )
 
 func NewExecPullImage(dic DIC) *Exec {
@@ -21,21 +24,21 @@ func NewExecPullImage(dic DIC) *Exec {
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeouts.Default)
 			defer cancel()
 
+			pullOpts := image.PullOptions{}
 			if cfg.DockerLogin.Enabled {
-				loginCmd := exec.CommandContext(
-					ctx,
-					cfg.BinPaths.Docker,
-					"login",
-					cfg.DockerLogin.Registry,
-					"-u", cfg.DockerLogin.Username,
-					"-p", cfg.DockerLogin.Password,
-				)
-				if err := loginCmd.Run(); err != nil {
+				authConfig := map[string]string{
+					"username": cfg.DockerLogin.Username,
+					"password": cfg.DockerLogin.Password,
+				}
+				jsonBytes, err := json.Marshal(authConfig)
+				if err != nil {
 					return domain.ExecResult{
 						Status: domain.ExecResultStatusError,
-						Err:    fmt.Errorf("docker login failed: %w", err),
+						Err:    fmt.Errorf("json marshal failed: %v", err),
 					}
 				}
+
+				pullOpts.RegistryAuth = base64.URLEncoding.EncodeToString(jsonBytes)
 			}
 
 			v := summary.GetNextVersion()
@@ -45,10 +48,10 @@ func NewExecPullImage(dic DIC) *Exec {
 			for _, img := range cfg.Images {
 				image := img + ":" + v
 
-				if err := dockerService.ImagePull(image); err != nil {
+				if err := dockerService.ImagePull(ctx, image, pullOpts); err != nil {
 					return domain.ExecResult{
 						Status: domain.ExecResultStatusError,
-						Err:    fmt.Errorf("docker pull failed: %w", err),
+						Err:    fmt.Errorf("docker pull failed: %v", err),
 					}
 				}
 
