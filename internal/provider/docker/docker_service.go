@@ -21,6 +21,9 @@ const (
 	defaultTimeout = 10 * time.Second
 )
 
+// ErrDeployNotFound means no containers of the project were found.
+var ErrDeployNotFound = errors.New("version not found")
+
 // Docker представляет работу с Docker.
 type Docker struct {
 	devMode bool
@@ -92,7 +95,7 @@ func (d *Docker) GetCurrentDeploy(needProjectName string) (currVersion string, c
 	}
 
 	if len(versions) == 0 {
-		return "", "", errors.New("version not found")
+		return "", "", ErrDeployNotFound
 	}
 	if len(versions) > 1 {
 		vs := make([]string, 0, len(versions))
@@ -165,6 +168,39 @@ func (d *Docker) GetContainers(projectName string, version string) (frontend, ba
 	}
 
 	return frontend, backend, nil
+}
+
+// GetContainersStatus returns a state snapshot of the frontend and backend containers of the deploy.
+func (d *Docker) GetContainersStatus(projectName, version string) ([]domain.ContainerStatus, error) {
+	frontend, backend, err := d.GetContainers(projectName, version)
+	if err != nil {
+		return nil, fmt.Errorf("get containers: %v", err)
+	}
+
+	summaries := []struct {
+		service domain.ContainerAppServiceType
+		ctr     *container.Summary
+	}{
+		{domain.ContainerAppServiceTypeFrontend, frontend},
+		{domain.ContainerAppServiceTypeBackend, backend},
+	}
+
+	statuses := make([]domain.ContainerStatus, 0, len(summaries))
+	for _, s := range summaries {
+		state, err := d.GetState(s.ctr.ID)
+		if err != nil {
+			return nil, fmt.Errorf("get state of %s: %v", s.service, err)
+		}
+
+		statuses = append(statuses, domain.ContainerStatus{
+			Service: s.service,
+			Name:    strings.TrimPrefix(strings.Join(s.ctr.Names, ","), "/"),
+			Image:   s.ctr.Image,
+			State:   state,
+		})
+	}
+
+	return statuses, nil
 }
 
 func (d *Docker) GetState(containerID string) (domain.ContainerState, error) {

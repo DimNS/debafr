@@ -25,6 +25,12 @@ func main() {
 			}
 
 			return
+		case "status":
+			if err := application.Status(); err != nil {
+				log.Fatalf("Status: %v\n", err)
+			}
+
+			return
 		}
 	}
 

@@ -38,6 +38,14 @@ func (s ContainerStateHealth) String() string {
 	return string(s)
 }
 
+// ContainerStatus is a snapshot of one project container.
+type ContainerStatus struct {
+	Service ContainerAppServiceType
+	Name    string
+	Image   string
+	State   ContainerState
+}
+
 type ContainerAppServiceType string
 
 const (

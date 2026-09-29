@@ -23,11 +23,14 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
 curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scripts/install.sh | bash -s -- --quiet
 ```
 
-## Обновление
+## Команды
 
-```bash
-debafr update
-```
+| Команда          | Описание                                                        |
+| ---------------- | --------------------------------------------------------------- |
+| `debafr`         | TUI: деплой blue/green с проверками и переключением nginx       |
+| `debafr status`  | Текущий деплой: версия, стратегия, порты, состояние контейнеров |
+| `debafr update`  | Обновить debafr до последней версии                             |
+| `debafr version` | Показать версию debafr (`--version`, `-v`)                      |
 
 ## Использование
 
@@ -68,7 +71,7 @@ debafr update
    | `timeouts.default` | string | `"5m"` | ❌ Нет |
    | `healthcheck.max_retries` | integer | `30` | ❌ Нет |
    | `healthcheck.retry_delay` | string | `"5s"` | ❌ Нет |
-4. Запустите приложение
+4. Запустите деплой
     ```bash
     debafr
     ```
