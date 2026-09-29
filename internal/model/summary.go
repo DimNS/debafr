@@ -12,7 +12,8 @@ import (
 
 const (
 	// pendingValue is the placeholder of everything the steps have not filled
-	// in yet, the spinner frame takes its place on the screen.
+	// in yet, it is static on purpose: a spinner per value turns the panel
+	// into a wall of blinking dots.
 	pendingValue = "⏳"
 
 	// labelWidth fits the longest label of the panel, so all the values line up
@@ -78,10 +79,6 @@ type Summary struct {
 	// time from here to the final screen.
 	startedAt time.Time
 
-	// pendingFrame is the current frame of the spinner, shown instead of the
-	// placeholder until the value is known.
-	pendingFrame string
-
 	styles styles
 }
 
@@ -131,8 +128,6 @@ func NewSummary(cfg SummaryConfig) *Summary {
 
 		currNextPorts: nil,
 
-		pendingFrame: pendingValue,
-
 		styles: styles{
 			category: lipgloss.NewStyle().
 				Foreground(cfg.Theme.ColorWhite).
@@ -172,7 +167,7 @@ func (s *Summary) View() string {
 	if s.mode == domain.ModeInstall || s.mode == domain.ModeUpdate {
 		deploy = fmt.Sprintf(
 			"%s\n%s\n%s",
-			s.styles.category.Render("Deploy ("+s.pending(s.nextVersion)+")"),
+			s.styles.category.Render("Deploy ("+s.nextVersion+")"),
 			s.stepLine("Launching:", s.deployLaunching),
 			s.stepLine("Healthcheck:", s.deployHealthcheck),
 		)
@@ -189,7 +184,7 @@ func (s *Summary) View() string {
 
 		shutdown = fmt.Sprintf(
 			"%s\n%s",
-			s.styles.category.Render("Shutdown ("+s.pending(s.currentVersion)+")"),
+			s.styles.category.Render("Shutdown ("+s.currentVersion+")"),
 			s.stepLine("Stopping the old version:", s.shutdownStopping),
 		)
 	}
@@ -349,12 +344,6 @@ func (s *Summary) GetElapsed() time.Duration {
 	return time.Since(s.startedAt)
 }
 
-// SetPendingFrame stores the current frame of the spinner, the summary has no
-// animation of its own and borrows the frames of the running step.
-func (s *Summary) SetPendingFrame(frame string) {
-	s.pendingFrame = frame
-}
-
 // totalSteps counts the steps of the pipeline. Both modes share the deploy
 // itself, update additionally switches the strategy and stops the old deploy,
 // which is also the only way into the VictoriaMetrics step.
@@ -381,19 +370,9 @@ func (s *Summary) label(text string) string {
 	return s.styles.label.Width(labelWidth).Render(text)
 }
 
-// value renders a value of the panel, the ones not known yet show the frame of
-// the running step instead of the placeholder.
+// value renders a value of the panel.
 func (s *Summary) value(text string) string {
-	return s.styles.value.Render(s.pending(text))
-}
-
-// pending swaps the placeholder for the current frame of the spinner.
-func (s *Summary) pending(text string) string {
-	if text != pendingValue {
-		return text
-	}
-
-	return s.pendingFrame
+	return s.styles.value.Render(text)
 }
 
 // stepLine renders a step of the pipeline. An untouched step is dimmed, so it
@@ -409,7 +388,7 @@ func (s *Summary) stepLine(text string, done *bool) string {
 
 func (s *Summary) boolToIcon(b *bool) string {
 	if b == nil {
-		return s.pending(pendingValue)
+		return s.value(pendingValue)
 	}
 
 	if *b {

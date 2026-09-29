@@ -34,21 +34,16 @@ func TestSplitString(t *testing.T) {
 	})
 }
 
-func TestPending(t *testing.T) {
+func TestValues(t *testing.T) {
 	t.Parallel()
 
 	s := NewSummary(SummaryConfig{Theme: domain.NewTheme()})
 
-	assert.Contains(t, s.value(pendingValue), pendingValue, "the placeholder stays until the spinner ticks")
+	assert.Contains(t, s.value(pendingValue), pendingValue, "the placeholder is static")
 	assert.Contains(t, s.value("1.2.3"), "1.2.3", "a known value is kept as is")
 
-	s.SetPendingFrame("●∙∙")
-
-	assert.Contains(t, s.value(pendingValue), "●∙∙", "the frame replaces the placeholder")
-	assert.Contains(t, s.value("1.2.3"), "1.2.3")
-
 	done, failed := true, false
-	assert.Contains(t, s.boolToIcon(nil), "●∙∙", "a step in progress spins")
+	assert.Contains(t, s.boolToIcon(nil), pendingValue, "a step in progress waits")
 	assert.Contains(t, s.boolToIcon(&done), "✅")
 	assert.Contains(t, s.boolToIcon(&failed), "❌")
 }

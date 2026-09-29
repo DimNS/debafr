@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
@@ -37,11 +36,6 @@ type App struct {
 
 	leftStyle  lipgloss.Style
 	rightStyle lipgloss.Style
-
-	// ponytail: the summary borrows the frames of this spinner, bubbles gives
-	// every spinner its own tick id, so the frames cannot be shared and the app
-	// keeps a chain of its own. Drop the chain once the summary animates alone.
-	spinner spinner.Model
 
 	currentCmd tea.Model
 	keys       domain.KeyMap
@@ -104,8 +98,6 @@ func New(appVersion string) (*App, error) {
 
 		dic: dic,
 
-		spinner: domain.NewSpinner(theme.StyleGreen),
-
 		currentCmd: model.NewDir(dic),
 		keys:       domain.NewKeyMap(),
 	}
@@ -115,7 +107,7 @@ func New(appVersion string) (*App, error) {
 }
 
 func (a *App) Init() tea.Cmd {
-	return tea.Batch(a.currentCmd.Init(), a.spinner.Tick)
+	return a.currentCmd.Init()
 }
 
 func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -126,24 +118,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.rebuildStyles(sizeMsg.Width, sizeMsg.Height)
 	}
 
-	var (
-		cmd  tea.Cmd
-		cmds []tea.Cmd
-	)
+	var cmd tea.Cmd
 
 	a.currentCmd, cmd = a.currentCmd.Update(msg)
-	cmds = append(cmds, cmd)
-
-	// the left panel has no animation of its own, it renders the frame of the
-	// spinner on every tick
-	if _, ok := msg.(spinner.TickMsg); ok {
-		var cmdSpinner tea.Cmd
-
-		a.spinner, cmdSpinner = a.spinner.Update(msg)
-		a.summary.SetPendingFrame(a.spinner.View())
-
-		cmds = append(cmds, cmdSpinner)
-	}
 
 	switch msg := msg.(type) {
 	case model.NextCmdMsg:
@@ -159,7 +136,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	default:
 	}
 
-	return a, tea.Batch(cmds...)
+	return a, cmd
 }
 
 func (a *App) View() string {
