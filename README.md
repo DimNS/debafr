@@ -59,8 +59,8 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
    | `binpaths.docker` | string | `"/usr/bin/docker"` | ❌ Нет |
    | `binpaths.curl` | string | `"/usr/bin/curl"` | ❌ Нет |
    | `binpaths.nginx` | string | `"/usr/sbin/nginx"` | ❌ Нет |
-   | `timeouts.default` | string | `"60s"` | ❌ Нет |
-   | `healthcheck.max_retries` | integer | `10` | ❌ Нет |
+   | `timeouts.default` | string | `"5m"` | ❌ Нет |
+   | `healthcheck.max_retries` | integer | `30` | ❌ Нет |
    | `healthcheck.retry_delay` | string | `"5s"` | ❌ Нет |
 4. Запустите приложение
     ```bash

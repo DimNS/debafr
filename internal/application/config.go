@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	defaultCmdTimeout = 60 * time.Second
+	defaultCmdTimeout = 5 * time.Minute
 	defaultRetryDelay = 5 * time.Second
-	defaultMaxRetries = 10
+	defaultMaxRetries = 30
 )
 
 type Configuration struct {

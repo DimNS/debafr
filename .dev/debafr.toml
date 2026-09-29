@@ -54,8 +54,8 @@ curl = "/usr/bin/curl"
 nginx = "/usr/sbin/nginx"
 
 [timeouts]
-default = "60s"
+default = "5m"
 
 [healthcheck]
-max_retries = 10
+max_retries = 30
 retry_delay = "5s"
