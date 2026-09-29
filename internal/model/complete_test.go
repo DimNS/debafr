@@ -13,7 +13,7 @@ import (
 )
 
 // completeDIC is fakeDIC plus the summary the final screen reads.
-type completeDIC struct{ fakeDIC }
+type completeDIC struct{ *fakeDIC }
 
 func (completeDIC) GetSummary() *Summary {
 	return NewSummary(SummaryConfig{Theme: domain.NewTheme()})
@@ -28,7 +28,7 @@ func TestCompleteBanner(t *testing.T) {
 	t.Run("Should centre the success line and show the total time", func(t *testing.T) {
 		t.Parallel()
 
-		c := &Complete{dic: completeDIC{}, theme: domain.NewTheme()}
+		c := &Complete{dic: completeDIC{newFakeDIC()}, theme: domain.NewTheme()}
 
 		lines := strings.Split(c.banner(), "\n")
 		require.Len(t, lines, 2)
@@ -42,7 +42,7 @@ func TestCompleteBanner(t *testing.T) {
 	t.Run("Should not claim a success when the containers were not listed", func(t *testing.T) {
 		t.Parallel()
 
-		c := &Complete{dic: completeDIC{}, theme: domain.NewTheme(), output: "Error: nope", failed: true}
+		c := &Complete{dic: completeDIC{newFakeDIC()}, theme: domain.NewTheme(), output: "Error: nope", failed: true}
 
 		assert.Equal(t, "Error: nope", c.View())
 	})

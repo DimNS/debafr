@@ -47,9 +47,10 @@ func TestPending(t *testing.T) {
 	assert.Contains(t, s.value(pendingValue), "●∙∙", "the frame replaces the placeholder")
 	assert.Contains(t, s.value("1.2.3"), "1.2.3")
 
-	done := true
+	done, failed := true, false
 	assert.Contains(t, s.boolToIcon(nil), "●∙∙", "a step in progress spins")
 	assert.Contains(t, s.boolToIcon(&done), "✅")
+	assert.Contains(t, s.boolToIcon(&failed), "❌")
 }
 
 func TestSteps(t *testing.T) {
