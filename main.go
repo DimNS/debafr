@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -11,6 +12,14 @@ import (
 var appVersion = "0.0.0" //nolint:gochecknoglobals // все в порядке
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "update" {
+		if err := application.Update(appVersion); err != nil {
+			log.Fatalf("Update: %v\n", err)
+		}
+
+		return
+	}
+
 	app, err := application.New(appVersion)
 	if err != nil {
 		log.Fatalf("New: %v\n", err)

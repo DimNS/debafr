@@ -23,6 +23,8 @@ const (
 	compensationHeight = 2
 
 	defaultTimeout = 10 * time.Second
+
+	defaultUpdateTimeout = 5 * time.Minute
 )
 
 type App struct {

@@ -23,6 +23,12 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
 curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scripts/install.sh | bash -s -- --quiet
 ```
 
+## Обновление
+
+```bash
+debafr update
+```
+
 ## Использование
 
 > Обратите внимание команды выполняются для каталога: `/opt/project`
