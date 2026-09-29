@@ -22,13 +22,10 @@ lint:
 test:
 	@go test -race -failfast -count=1 ./...
 
-.PHONY: run
-run:
-	@go run -race ./main.go
-
-.PHONY: build
-build:
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w -X 'main.appVersion=0.0.0'" -o debafr ./main.go
+.PHONY: dev
+dev:
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w -X 'main.appVersion=0.0.0'" -o .dev/debafr ./main.go
+	@.dev/debafr
 
 .PHONY: release
 release:
