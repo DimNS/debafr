@@ -32,4 +32,4 @@ build:
 
 .PHONY: tools
 tools: deps
-	@go install golang.org/x/vuln/cmd/govulncheck@latest
+	@go install -ldflags="-s -w" golang.org/x/vuln/cmd/govulncheck@latest
