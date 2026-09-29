@@ -187,3 +187,24 @@ func TestExecResize(t *testing.T) {
 	assert.Equal(t, 80-dic.GetSummaryWidth()-compensationWidth, c.pager.Width)
 	assert.LessOrEqual(t, c.pager.Height+compensationHeight, dic.GetPhysicalHeight())
 }
+
+// A terminal can report no size at all before it is laid out, and a negative
+// pager height makes bubbles slice past the end of the content.
+func TestExecResizeWithoutSize(t *testing.T) {
+	t.Parallel()
+
+	dic := &fakeDIC{width: 0, height: 0}
+	c := NewExec(dic, domain.ExecConfig{
+		Name: "Step",
+		StartFunc: func() domain.ExecResult {
+			return domain.ExecResult{Status: domain.ExecResultStatusError, Err: assert.AnError, Output: "line\n"}
+		},
+		SuccessFunc: func() {},
+		ErrorFunc:   func() {},
+	})
+
+	c.exec()
+
+	assert.NotPanics(t, func() { c.Update(StatusDone{true}) })
+	assert.Positive(t, c.pager.Height, "the pager needs a height to slice the content by")
+}

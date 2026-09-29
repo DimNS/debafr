@@ -169,7 +169,10 @@ func (c *Exec) resize() {
 	}
 
 	c.pager.Width = c.dic.GetPhysicalWidth() - c.dic.GetSummaryWidth() - compensationWidth
-	c.pager.Height = height
+	// bubbles режет контент по YOffset+Height, и отрицательная высота уводит
+	// срез за конец. Терминал может сообщить нулевой размер до того, как
+	// разложился, поэтому упираемся в единицу.
+	c.pager.Height = max(height, 1)
 }
 
 // footer is kept to exactly two lines, so a narrow terminal drops the hint

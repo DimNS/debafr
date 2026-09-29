@@ -38,15 +38,6 @@ func NewExecSwitchingStrategy(dic DIC) *Exec {
 			cmdReload := func() ([]byte, error) {
 				return exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-s", "reload").CombinedOutput()
 			}
-			if dic.GetDevMode() {
-				dockerService := dic.GetDockerService()
-				cmdTest = func() ([]byte, error) {
-					return dockerService.Exec(ctx, TestContainerName, []string{"nginx", "-t"})
-				}
-				cmdReload = func() ([]byte, error) {
-					return dockerService.Exec(ctx, TestContainerName, []string{"nginx", "-s", "reload"})
-				}
-			}
 			resNginx := switchNginx(switchConfig{
 				proxyPass: cfg.ProxyPassPrefix,
 				filePath:  path.Join(summary.GetDir(), summary.GetFilenameNginxConf()),

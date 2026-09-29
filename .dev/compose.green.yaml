@@ -1,45 +1,39 @@
-name: capuchin
+# Dev-стенд: см. compose.blue.yaml. Тот же проект (name: debafr), поэтому
+# compose считает сервисы другого файла сиротами и не удаляет их — без
+# --remove-orphans синий продолжает работать, пока поднимается зелёный.
+name: debafr
 
 services:
-  capuchin_db:
-    image: postgres:16.4
-    container_name: capuchin_postgres
-    volumes:
-      - capuchin_db_data:/var/lib/postgresql/data
-    networks:
-      - capuchin-network
-
-  capuchin_green_api:
-    image: ghcr.io/capuchinapp/cloud/api:${APP_VERSION}
-    container_name: capuchin_green_${APP_VERSION}_api
+  green_api:
+    image: nginx:${APP_VERSION}
+    container_name: debafr_green_${APP_VERSION}_api
     labels:
-      - "app.project.name=capuchin"
+      - "app.project.name=debafr"
       - "app.service.name=api"
       - "app.service.type=backend"
       - "app.deployment.strategy=green"
       - "app.version=${APP_VERSION}"
     ports:
-      - "3011:3000"
-    networks:
-      - capuchin-network
+      - "3011:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
 
-  capuchin_green_ui:
-    image: ghcr.io/capuchinapp/cloud/ui:${APP_VERSION}
-    container_name: capuchin_green_${APP_VERSION}_ui
+  green_ui:
+    image: nginx:${APP_VERSION}
+    container_name: debafr_green_${APP_VERSION}_ui
     labels:
-      - "app.project.name=capuchin"
+      - "app.project.name=debafr"
       - "app.service.name=ui"
       - "app.service.type=frontend"
       - "app.deployment.strategy=green"
       - "app.version=${APP_VERSION}"
     ports:
-      - "3012:80" # important for running (127.0.0.1) without nginx: +1 from the api port
-    networks:
-      - capuchin-network
-
-volumes:
-  capuchin_db_data:
-
-networks:
-  capuchin-network:
-    external: true
+      - "3012:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 2s
+      timeout: 2s
+      retries: 15

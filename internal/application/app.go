@@ -1,7 +1,6 @@
 package application
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
@@ -22,15 +21,11 @@ const (
 	compensationWidth  = 4
 	compensationHeight = 2
 
-	defaultTimeout = 10 * time.Second
-
 	defaultUpdateTimeout = 5 * time.Minute
 )
 
 type App struct {
 	summary *model.Summary
-
-	dockerService *docker.Docker
 
 	dic *DIC
 
@@ -52,7 +47,7 @@ func New(appVersion string) (*App, error) {
 		return nil, fmt.Errorf("get terminal size: %v", err)
 	}
 
-	dockerService, err := docker.New(conf.DevMode)
+	dockerService, err := docker.New()
 	if err != nil {
 		return nil, fmt.Errorf("new docker: %v", err)
 	}
@@ -94,8 +89,6 @@ func New(appVersion string) (*App, error) {
 	app := &App{
 		summary: summary,
 
-		dockerService: dockerService,
-
 		dic: dic,
 
 		currentCmd: model.NewDir(dic),
@@ -129,7 +122,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, a.currentCmd.Init()
 
 	case tea.KeyMsg:
-		if a.quit(msg) {
+		if key.Matches(msg, a.keys.Quit) {
 			return a, tea.Quit
 		}
 
@@ -145,28 +138,6 @@ func (a *App) View() string {
 		a.leftStyle.Render(a.summary.View()),
 		a.rightStyle.Render(a.currentCmd.View()),
 	)
-}
-
-// quit reports whether the quit key has been pressed, cleaning up the leftovers
-// of dev mode before the app goes away.
-func (a *App) quit(msg tea.KeyMsg) bool {
-	if !key.Matches(msg, a.keys.Quit) {
-		return false
-	}
-
-	if a.summary.GetDevMode() {
-		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-		defer cancel()
-
-		if err := a.dockerService.RemoveContainer(ctx, model.TestContainerName); err != nil {
-			fmt.Println(err)
-		}
-		if err := a.dockerService.RemoveImage(ctx, "nginx:alpine"); err != nil {
-			fmt.Println(err)
-		}
-	}
-
-	return true
 }
 
 // rebuildStyles refits both panels into the given terminal size.

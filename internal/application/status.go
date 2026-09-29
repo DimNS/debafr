@@ -21,7 +21,7 @@ func Status() error {
 
 	projectName := conf.Toml.App.ProjectName
 
-	dockerService, err := docker.New(conf.DevMode)
+	dockerService, err := docker.New()
 	if err != nil {
 		return fmt.Errorf("new docker: %v", err)
 	}

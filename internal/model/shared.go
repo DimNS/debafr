@@ -5,8 +5,6 @@ import (
 )
 
 const (
-	TestContainerName = "debafr_app"
-
 	EmptyValue = "---"
 )
 

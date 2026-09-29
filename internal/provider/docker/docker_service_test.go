@@ -3,6 +3,7 @@ package docker
 import (
 	"testing"
 
+	"github.com/docker/docker/api/types/container"
 	"github.com/stretchr/testify/assert"
 
 	"debafr/internal/domain"
@@ -94,6 +95,36 @@ func Test_healthToDomain(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := healthToDomain(tt.status)
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_runningOnly(t *testing.T) {
+	tests := []struct {
+		name  string
+		given []container.Summary
+		want  int
+	}{
+		{"остались только запущенные", []container.Summary{
+			{State: "running"}, {State: "exited"},
+		}, 1},
+		{"запущенных нет", []container.Summary{
+			{State: "exited"}, {State: "created"},
+		}, 0},
+		{"все запущены", []container.Summary{
+			{State: "running"}, {State: "running"},
+		}, 2},
+		{"пусто", []container.Summary{}, 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := runningOnly(tt.given)
+
+			assert.Len(t, got, tt.want)
+			for _, ctr := range got {
+				assert.Equal(t, "running", ctr.State)
+			}
 		})
 	}
 }

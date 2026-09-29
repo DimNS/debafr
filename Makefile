@@ -23,9 +23,35 @@ test:
 	@go test -race -failfast -count=1 ./...
 
 .PHONY: dev
-dev:
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w -X 'main.appVersion=0.0.0'" -o .dev/debafr ./main.go
-	@.dev/debafr
+dev: dev-build
+	@cd .dev && DEBAFR_DEV_MODE=true ./debafr
+
+.PHONY: dev-build
+# Собираем под машину разработчика, без GOOS/GOARCH: dev-стенд запускается
+# локально, кросс-компиляция тут только мешает.
+dev-build:
+	@CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X 'main.appVersion=0.0.0'" -o .dev/debafr ./main.go
+
+.PHONY: dev-status
+dev-status:
+	@cd .dev && DEBAFR_DEV_MODE=true ./debafr status
+
+# Поднять стенд руками (compose), минуя TUI.
+.PHONY: dev-up
+dev-up:
+	@cd .dev && APP_VERSION=$${APP_VERSION:-1.28.1-alpine} docker compose -f compose.blue.yaml up -d
+
+.PHONY: dev-down
+dev-down:
+	@cd .dev && docker compose -f compose.blue.yaml down --remove-orphans
+	@cd .dev && docker compose -f compose.green.yaml down --remove-orphans
+	@docker rm -f debafr_test_nginx 2>/dev/null || true
+
+# Убрать всё, что стенд оставил: контейнеры, сети, образы, json-лог.
+.PHONY: dev-clean
+dev-clean: dev-down
+	@docker image ls -q 'nginx' | xargs -r docker image rm -f 2>/dev/null || true
+	@rm -f .dev/debafr.json
 
 .PHONY: release
 release:

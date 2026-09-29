@@ -75,11 +75,10 @@ func (c *Dir) getDir() tea.Msg {
 		}
 	}
 
-	if c.dic.GetDevMode() {
-		c.dir = dir + "/.dev"
-	} else {
-		c.dir = dir
-	}
+	// Каталог проекта — это CWD. Dev-стенд запускает бинарь из .dev/, поэтому
+	// отдельного подстановочного пути не нужно: и .dev/debafr.toml, и
+	// compose.*.yaml, и nginx.conf лежат рядом с бинарём.
+	c.dir = dir
 
 	return StatusDone{true}
 }

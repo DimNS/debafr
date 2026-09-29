@@ -1,47 +1,38 @@
-# Конфигурация Debafr
-# Этот файл должен находится в корневой директории приложения
+# Конфиг dev-стенда. Подробности — в .dev/README.md.
+#
+# Приложение читает debafr.toml из CWD, а `make dev` запускает бинарь из .dev/,
+# поэтому конфиг лежит рядом с бинарём, compose-файлами и nginx.conf.
+# Все пути ниже — относительно этого каталога.
 
 [app]
-# Должно совпадать со значениями из compose.yaml:
-# name: myapp
-# services:
-#  service_name:
-#    labels:
-#      - "app.project.name=myapp"
-project_name = "myapp"
+# Должно совпадать с name в compose.*.yaml и с app.project.name в их labels.
+project_name = "debafr"
+# Префикс, по которому приложение ищет строки для переключения в nginx.conf.
+# За ним нельзя писать этот же префикс в комментариях nginx.conf: замена
+# глобальная и сожрала бы комментарий.
 proxy_pass_prefix = "proxy_pass http://127.0.0.1:"
+# Порты из nginx.conf и compose.*.yaml. /ws намеренно дублирует порт /:
+# приложение должно переключить все вхождения, а не только первое.
 location_ports = [
     {location = "/api", blue_port = "3001", green_port = "3011"},
-    {location = "/ws",  blue_port = "3003", green_port = "3013"},
+    {location = "/ws",  blue_port = "3002", green_port = "3012"},
     {location = "/",    blue_port = "3002", green_port = "3012"},
 ]
-images = [
-    "ghcr.io/capuchinapp/cloud/api",
-    "ghcr.io/capuchinapp/cloud/ui",
-]
+# Фейковое приложение: один и тот же публичный образ на все сервисы.
+# Приложение дописывает ":" + введённую версию, т.е. тянется nginx:<версия>.
+# В README.md зафиксированы версии для install и update.
+images = ["nginx"]
 
-# Включение генерации targets для victoriametrics
-# после переключения сервиса
-#
-# Использование:
-# scrape_configs:
-#   - job_name: "myapp_metrics"
-#     metrics_path: /metrics
-#     file_sd_configs:
-#       - files:
-#           - "/etc/victoriametrics/targets/myapp.json"
-#         refresh_interval: 10s
 [app.victoriametrics]
-enabled = false
-targets_output_file_path = ""
-target_blue = ""
-target_green = ""
-
-[docker_login]
-enabled = false
-registry = ""
-username = ""
-password = ""
+# Шаг только пишет debafr.json с целью активной стратегии; сам VictoriaMetrics
+# не поднимается (это внешняя система, а не фича debafr, и образ весит ~100 МБ).
+# Файл удобнее смотреть глазами, чем поднимать ради стенда метрики.
+enabled = true
+# Путь относительно CWD, то есть попадёт в .dev/debafr.json.
+targets_output_file_path = "debafr.json"
+# DNS-имена сервисов внутри сети compose (name: debafr).
+target_blue = "blue_api:80"
+target_green = "green_api:80"
 
 [files]
 compose_blue = "compose.blue.yaml"
@@ -49,13 +40,7 @@ compose_green = "compose.green.yaml"
 nginx_conf = "nginx.conf"
 
 [binpaths]
-docker = "/usr/bin/docker"
-curl = "/usr/bin/curl"
-nginx = "/usr/sbin/nginx"
-
-[timeouts]
-default = "5m"
-
-[healthcheck]
-max_retries = 30
-retry_delay = "5s"
+docker = "docker"
+curl = "curl"
+# Системного nginx в стенде нет, вместо него обёртка над docker exec.
+nginx = "./nginx.sh"

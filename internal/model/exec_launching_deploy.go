@@ -12,7 +12,6 @@ import (
 func NewExecLaunchingDeploy(dic DIC) *Exec {
 	summary := dic.GetSummary()
 	cfg := dic.GetAppConfig()
-	dockerService := dic.GetDockerService()
 
 	return NewExec(dic, domain.ExecConfig{
 		Name: "Deploying",
@@ -20,21 +19,6 @@ func NewExecLaunchingDeploy(dic DIC) *Exec {
 		StartFunc: func() domain.ExecResult {
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeouts.Default)
 			defer cancel()
-
-			if dic.GetDevMode() {
-				id, err := dockerService.RunContainer(ctx, TestContainerName, "nginx:alpine", "8585", "80")
-				if err != nil {
-					return domain.ExecResult{
-						Status: domain.ExecResultStatusError,
-						Err:    err,
-					}
-				}
-
-				return domain.ExecResult{
-					Status: domain.ExecResultStatusSuccess,
-					Output: "Container started: " + id[:12],
-				}
-			}
 
 			var f string
 			switch summary.GetNextStrategy() {
@@ -49,7 +33,9 @@ func NewExecLaunchingDeploy(dic DIC) *Exec {
 				}
 			}
 
-			// Compose: docker SDK не умеет compose, остаётся на CLI
+			// Compose: docker SDK не умеет compose, остаётся на CLI.
+			// Dir обязателен: в dev-режиме каталог проекта это .dev/, а не
+			// откуда запущен бинарь, и compose ищет файл относительно Dir.
 			command := exec.CommandContext(
 				ctx,
 				cfg.BinPaths.Docker,
@@ -59,6 +45,7 @@ func NewExecLaunchingDeploy(dic DIC) *Exec {
 				"up",
 				"-d",
 			)
+			command.Dir = summary.GetDir()
 			command.Env = append(os.Environ(), "APP_VERSION="+summary.GetNextVersion())
 
 			output, err := command.CombinedOutput()
