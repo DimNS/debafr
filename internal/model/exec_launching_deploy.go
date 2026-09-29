@@ -84,6 +84,8 @@ func NewExecLaunchingDeploy(dic DIC) *Exec {
 			summary.UpdateDeployLaunching(false)
 		},
 
+		AutoAdvance: true,
+
 		NextCmd: NewExecHealthcheck(dic),
 	})
 }

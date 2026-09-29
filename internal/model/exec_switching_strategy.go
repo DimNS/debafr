@@ -75,6 +75,8 @@ func NewExecSwitchingStrategy(dic DIC) *Exec {
 			summary.UpdateSwitchingNginx(false)
 		},
 
+		AutoAdvance: true,
+
 		NextCmd: NewExecStoppingCurrentDeploy(dic),
 	})
 }

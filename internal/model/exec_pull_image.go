@@ -72,6 +72,8 @@ func NewExecPullImage(dic DIC) *Exec {
 			// do nothing
 		},
 
+		AutoAdvance: true,
+
 		NextCmd: NewExecLaunchingDeploy(dic),
 	})
 }

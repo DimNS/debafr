@@ -50,6 +50,8 @@ func NewExecPorts(dic DIC) *Exec {
 			// Нечего делать
 		},
 
+		AutoAdvance: true,
+
 		NextCmd: NewNextDeploy(dic),
 	})
 }

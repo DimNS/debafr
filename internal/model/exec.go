@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -16,7 +17,12 @@ const (
 	compensationWidth = 6
 	// vertical space eaten by the panel border, the footer is on top of that.
 	compensationHeight = 2
-	footerHeight       = 2
+
+	footerHeight = 2
+
+	// how long the finished step stays on the screen before the next one
+	// starts, so a fast step does not just flash.
+	autoAdvancePause = 300 * time.Millisecond
 )
 
 type Exec struct {
@@ -53,11 +59,7 @@ func (c *Exec) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.String() == "enter" && c.status != nil && *c.status {
-			return c, func() tea.Msg {
-				return NextCmdMsg{
-					NextCmd: c.execCfg.NextCmd,
-				}
-			}
+			return c, c.next(0)
 		}
 
 	case StatusDone:
@@ -71,27 +73,13 @@ func (c *Exec) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		default:
 		}
 
-		if c.result.Status == domain.ExecResultStatusError {
-			var output string
-			if c.result.Output != "" {
-				output = "\n\nOutput:\n" + c.result.Output
-			}
-
-			c.pager.SetContent(
-				fmt.Sprintf(
-					"%s...\n\n%s%s",
-					c.execCfg.Name,
-					c.theme.StyleRed.Render("Error: "+c.result.Err.Error()),
-					output,
-				),
-			)
-			c.pager.GotoBottom()
-		} else {
-			c.pager.SetContent(c.result.Output)
-			c.pager.GotoBottom()
-		}
-
+		c.showOutput()
 		c.resize()
+
+		// a successful step does not need the user to read it, a failed one does.
+		if c.execCfg.AutoAdvance && c.result.Status == domain.ExecResultStatusSuccess {
+			return c, c.next(autoAdvancePause)
+		}
 
 	default:
 	}
@@ -165,4 +153,39 @@ func (c *Exec) exec() tea.Msg {
 	c.result = c.execCfg.StartFunc()
 
 	return StatusDone{true}
+}
+
+// next moves to the next step of the pipeline after the given pause, zero
+// meaning without waiting.
+func (c *Exec) next(pause time.Duration) tea.Cmd {
+	return tea.Tick(pause, func(time.Time) tea.Msg {
+		return NextCmdMsg{
+			NextCmd: c.execCfg.NextCmd,
+		}
+	})
+}
+
+// showOutput puts the result of the finished step into the pager.
+func (c *Exec) showOutput() {
+	if c.result.Status != domain.ExecResultStatusError {
+		c.pager.SetContent(c.result.Output)
+		c.pager.GotoBottom()
+
+		return
+	}
+
+	var output string
+	if c.result.Output != "" {
+		output = "\n\nOutput:\n" + c.result.Output
+	}
+
+	c.pager.SetContent(
+		fmt.Sprintf(
+			"%s...\n\n%s%s",
+			c.execCfg.Name,
+			c.theme.StyleRed.Render("Error: "+c.result.Err.Error()),
+			output,
+		),
+	)
+	c.pager.GotoBottom()
 }

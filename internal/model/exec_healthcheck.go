@@ -43,6 +43,8 @@ func NewExecHealthcheck(dic DIC) *Exec {
 			summary.UpdateDeployHealthcheck(false)
 		},
 
+		AutoAdvance: true,
+
 		NextCmd: func() tea.Model {
 			if summary.GetMode() == domain.ModeUpdate {
 				return NewExecSwitchingStrategy(dic)

@@ -78,6 +78,8 @@ func NewExecRequirements(dic DIC) *Exec {
 			// Нечего делать
 		},
 
+		AutoAdvance: true,
+
 		NextCmd: NewCurrentDeploy(dic),
 	})
 }

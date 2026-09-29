@@ -72,6 +72,8 @@ func NewExecWriteVictoriaMetricsTargets(dic DIC) *Exec {
 
 		ErrorFunc: func() {},
 
+		AutoAdvance: true,
+
 		NextCmd: NewComplete(dic),
 	})
 }

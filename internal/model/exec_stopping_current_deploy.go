@@ -56,6 +56,8 @@ func NewExecStoppingCurrentDeploy(dic DIC) *Exec {
 			summary.UpdateShutdownStopping(false)
 		},
 
+		AutoAdvance: true,
+
 		NextCmd: func() tea.Model {
 			if cfg.VictoriaMetrics.Enabled {
 				return NewExecWriteVictoriaMetricsTargets(dic)

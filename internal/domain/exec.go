@@ -10,6 +10,10 @@ type ExecConfig struct {
 	SuccessFunc func()
 	ErrorFunc   func()
 
+	// AutoAdvance moves to NextCmd right after a successful run, without
+	// waiting for enter. Set it to false to keep the manual mode.
+	AutoAdvance bool
+
 	NextCmd tea.Model
 }
 
