@@ -54,7 +54,10 @@ func (c *Mode) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if c.form.State == huh.StateCompleted {
-		c.dic.GetSummary().UpdateMode(domain.Mode(c.mode))
+		mode := domain.Mode(c.mode)
+		summary := c.dic.GetSummary()
+		summary.UpdateMode(mode)
+		summary.SetTotalSteps(totalSteps(c.dic.GetAppConfig(), mode))
 
 		cmds = append(cmds, func() tea.Msg {
 			return NextCmdMsg{

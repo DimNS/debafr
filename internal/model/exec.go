@@ -23,6 +23,8 @@ const (
 	// how long the finished step stays on the screen before the next one
 	// starts, so a fast step does not just flash.
 	autoAdvancePause = 300 * time.Millisecond
+
+	secondsInMinute = 60
 )
 
 type Exec struct {
@@ -33,6 +35,8 @@ type Exec struct {
 
 	status *bool
 	result domain.ExecResult
+
+	startedAt time.Time
 
 	execCfg domain.ExecConfig
 }
@@ -52,6 +56,9 @@ func NewExec(dic DIC, execCfg domain.ExecConfig) *Exec {
 }
 
 func (c *Exec) Init() tea.Cmd {
+	c.startedAt = time.Now()
+	c.dic.GetSummary().NextStep()
+
 	return tea.Batch(c.exec, c.spinner.Tick)
 }
 
@@ -102,7 +109,10 @@ func (c *Exec) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (c *Exec) View() string {
 	if c.status == nil {
-		c.pager.SetContent(fmt.Sprintf("%s %s", c.execCfg.Name, c.spinner.View()))
+		c.pager.SetContent(fmt.Sprintf(
+			"%s %s  %s  %s",
+			c.execCfg.Name, c.spinner.View(), c.stepsView(), c.elapsedView(),
+		))
 
 		return c.pager.View()
 	}
@@ -112,6 +122,27 @@ func (c *Exec) View() string {
 	}
 
 	return fmt.Sprintf("%s\n%s", c.pager.View(), c.footer())
+}
+
+// stepsView is the honest progress metric: the steps are not weighted by time,
+// so counting them says more than a percentage would.
+func (c *Exec) stepsView() string {
+	step, total := c.dic.GetSummary().GetStep()
+	if total == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("▸ %d/%d", step, total)
+}
+
+// elapsedView is recomputed on every spinner frame, so the step needs no timer
+// state of its own.
+func (c *Exec) elapsedView() string {
+	d := time.Since(c.startedAt).Truncate(time.Second)
+
+	return fmt.Sprintf(
+		"%d:%02d", int(d.Minutes()), int(d.Seconds())%secondsInMinute,
+	)
 }
 
 // scrollable reports whether the content is taller than the panel, the only case

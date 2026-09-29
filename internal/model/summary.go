@@ -60,6 +60,9 @@ type Summary struct {
 
 	shutdownStopping *bool
 
+	step       int
+	totalSteps int
+
 	styles styles
 }
 
@@ -298,6 +301,46 @@ func (s *Summary) UpdateSwitchingNginx(value bool) {
 
 func (s *Summary) UpdateShutdownStopping(value bool) {
 	s.shutdownStopping = &value
+}
+
+// SetTotalSteps fixes the size of the pipeline, it is known as soon as the mode
+// is chosen.
+func (s *Summary) SetTotalSteps(total int) {
+	s.totalSteps = total
+}
+
+// NextStep counts the step the pipeline has just entered. Before the mode is
+// chosen the total is unknown and nothing is counted, so the walk from the
+// current directory to the requirements check stays out of the counter.
+func (s *Summary) NextStep() {
+	if s.totalSteps > 0 && s.step < s.totalSteps {
+		s.step++
+	}
+}
+
+// GetStep returns the step in progress and the size of the pipeline.
+func (s *Summary) GetStep() (step, total int) {
+	return s.step, s.totalSteps
+}
+
+// totalSteps counts the steps of the pipeline. Both modes share the deploy
+// itself, update additionally switches the strategy and stops the old deploy,
+// which is also the only way into the VictoriaMetrics step.
+func totalSteps(cfg domain.AppConfig, mode domain.Mode) int {
+	const (
+		sharedSteps = 5 // requirements, ports, images, deploy, healthcheck
+		updateSteps = 2 // switching strategy, stopping the current deploy
+	)
+
+	steps := sharedSteps
+	if mode == domain.ModeUpdate {
+		steps += updateSteps
+		if cfg.VictoriaMetrics.Enabled {
+			steps++
+		}
+	}
+
+	return steps
 }
 
 func (s *Summary) boolToIcon(b *bool) string {
