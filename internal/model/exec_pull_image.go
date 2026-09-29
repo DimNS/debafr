@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"debafr/internal/domain"
-
 	"github.com/docker/docker/api/types/image"
+
+	"debafr/internal/domain"
 )
 
 func NewExecPullImage(dic DIC) *Exec {
