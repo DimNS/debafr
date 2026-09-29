@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -10,6 +11,8 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/docker/go-connections/nat"
 
 	"debafr/internal/domain"
 )
@@ -206,6 +209,84 @@ func (d *Docker) ContainerStop(containerID string) error {
 	}
 
 	return nil
+}
+
+func (d *Docker) RunContainer(ctx context.Context, name, img, hostPort, containerPort string) (string, error) {
+	port := nat.Port(containerPort)
+
+	resp, err := d.cli.ContainerCreate(ctx, &container.Config{
+		Image:        img,
+		ExposedPorts: nat.PortSet{port: struct{}{}},
+	}, &container.HostConfig{
+		PortBindings: nat.PortMap{port: []nat.PortBinding{{HostPort: hostPort}}},
+	}, nil, nil, name)
+	if err != nil {
+		return "", fmt.Errorf("failed to create container: %v", err)
+	}
+
+	if err := d.cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
+		return "", fmt.Errorf("failed to start container: %v", err)
+	}
+
+	return resp.ID, nil
+}
+
+func (d *Docker) Exec(ctx context.Context, containerID string, cmd []string) ([]byte, error) {
+	execResp, err := d.cli.ContainerExecCreate(ctx, containerID, container.ExecOptions{
+		Cmd:          cmd,
+		AttachStdout: true,
+		AttachStderr: true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create exec: %v", err)
+	}
+
+	attach, err := d.cli.ContainerExecAttach(ctx, execResp.ID, container.ExecAttachOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to attach exec: %v", err)
+	}
+	defer attach.Close()
+
+	var buf bytes.Buffer
+	if _, err := stdcopy.StdCopy(&buf, &buf, attach.Reader); err != nil {
+		return nil, fmt.Errorf("failed to read exec output: %v", err)
+	}
+	attach.Close()
+
+	inspect, err := d.cli.ContainerExecInspect(ctx, execResp.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to inspect exec: %v", err)
+	}
+	if inspect.ExitCode != 0 {
+		return buf.Bytes(), fmt.Errorf("exec exited with code %d: %s", inspect.ExitCode, buf.String())
+	}
+
+	return buf.Bytes(), nil
+}
+
+func (d *Docker) RemoveContainer(ctx context.Context, containerID string) error {
+	if err := d.cli.ContainerRemove(ctx, containerID, container.RemoveOptions{Force: true}); err != nil {
+		return fmt.Errorf("failed to remove container: %v", err)
+	}
+
+	return nil
+}
+
+func (d *Docker) RemoveImage(ctx context.Context, imageID string) error {
+	if _, err := d.cli.ImageRemove(ctx, imageID, image.RemoveOptions{Force: true}); err != nil {
+		return fmt.Errorf("failed to remove image: %v", err)
+	}
+
+	return nil
+}
+
+func (d *Docker) ListRunning(ctx context.Context) ([]container.Summary, error) {
+	containers, err := d.cli.ContainerList(ctx, container.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list containers: %v", err)
+	}
+
+	return containers, nil
 }
 
 func (d *Docker) ImagePull(ctx context.Context, img string, pullOpts image.PullOptions) error {

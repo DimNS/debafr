@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -28,6 +27,8 @@ const (
 
 type App struct {
 	summary *model.Summary
+
+	dockerService *docker.Docker
 
 	physicalWidth  int
 	physicalHeight int
@@ -92,6 +93,8 @@ func New(appVersion string) (*App, error) {
 	return &App{
 		summary: summary,
 
+		dockerService: dockerService,
+
 		physicalWidth:  physicalWidth,
 		physicalHeight: physicalHeight,
 
@@ -133,17 +136,12 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if key.Matches(msg, a.keys.Quit) { //nolint:nestif // ignore
 			if a.summary.GetDevMode() {
-				output, err := exec.CommandContext(ctx, "/usr/bin/docker", "rm", "-f", "debafr_app").CombinedOutput()
-				if err != nil {
+				if err := a.dockerService.RemoveContainer(ctx, model.TestContainerName); err != nil {
 					fmt.Println(err)
 				}
-				fmt.Println(string(output))
-
-				output, err = exec.CommandContext(ctx, "/usr/bin/docker", "rmi", "-f", "nginx:alpine").CombinedOutput()
-				if err != nil {
+				if err := a.dockerService.RemoveImage(ctx, "nginx:alpine"); err != nil {
 					fmt.Println(err)
 				}
-				fmt.Println(string(output))
 			}
 
 			return a, tea.Quit

@@ -17,8 +17,8 @@ type switchConfig struct {
 	proxyPass string
 	filePath  string
 	ports     []CurrNextPort
-	cmdTest   *exec.Cmd
-	cmdReload *exec.Cmd
+	test      func() ([]byte, error)
+	reload    func() ([]byte, error)
 }
 
 func NewExecSwitchingStrategy(dic DIC) *Exec {
@@ -32,18 +32,27 @@ func NewExecSwitchingStrategy(dic DIC) *Exec {
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeouts.Default)
 			defer cancel()
 
-			cmdTest := exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-t")
-			cmdReload := exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-s", "reload")
+			cmdTest := func() ([]byte, error) {
+				return exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-t").CombinedOutput()
+			}
+			cmdReload := func() ([]byte, error) {
+				return exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-s", "reload").CombinedOutput()
+			}
 			if dic.GetDevMode() {
-				cmdTest = exec.CommandContext(ctx, cfg.BinPaths.Docker, "exec", TestContainerName, cfg.BinPaths.Nginx, "-t")
-				cmdReload = exec.CommandContext(ctx, cfg.BinPaths.Docker, "exec", TestContainerName, cfg.BinPaths.Nginx, "-s", "reload")
+				dockerService := dic.GetDockerService()
+				cmdTest = func() ([]byte, error) {
+					return dockerService.Exec(ctx, TestContainerName, []string{"nginx", "-t"})
+				}
+				cmdReload = func() ([]byte, error) {
+					return dockerService.Exec(ctx, TestContainerName, []string{"nginx", "-s", "reload"})
+				}
 			}
 			resNginx := switchNginx(switchConfig{
 				proxyPass: cfg.ProxyPassPrefix,
 				filePath:  path.Join(summary.GetDir(), summary.GetFilenameNginxConf()),
 				ports:     summary.GetPorts(),
-				cmdTest:   cmdTest,
-				cmdReload: cmdReload,
+				test:      cmdTest,
+				reload:    cmdReload,
 			})
 			if resNginx.Status == domain.ExecResultStatusError {
 				return resNginx
@@ -103,7 +112,7 @@ func switchNginx(cfg switchConfig) domain.ExecResult {
 		}
 	}
 
-	outputTest, err := cfg.cmdTest.CombinedOutput()
+	outputTest, err := cfg.test()
 	if err != nil {
 		return domain.ExecResult{
 			Status: domain.ExecResultStatusError,
@@ -112,7 +121,7 @@ func switchNginx(cfg switchConfig) domain.ExecResult {
 		}
 	}
 
-	outputReload, err := cfg.cmdReload.CombinedOutput()
+	outputReload, err := cfg.reload()
 	if err != nil {
 		return domain.ExecResult{
 			Status: domain.ExecResultStatusError,
