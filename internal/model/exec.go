@@ -109,10 +109,15 @@ func (c *Exec) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (c *Exec) View() string {
 	if c.status == nil {
-		c.pager.SetContent(fmt.Sprintf(
+		header := fmt.Sprintf(
 			"%s %s  %s  %s",
 			c.execCfg.Name, c.spinner.View(), c.stepsView(), c.elapsedView(),
-		))
+		)
+		if c.execCfg.LiveFunc != nil {
+			header += "\n" + c.execCfg.LiveFunc()
+		}
+
+		c.pager.SetContent(header)
 
 		return c.pager.View()
 	}

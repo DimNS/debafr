@@ -14,6 +14,11 @@ type ExecConfig struct {
 	// waiting for enter. Set it to false to keep the manual mode.
 	AutoAdvance bool
 
+	// LiveFunc renders the lines a long running step shows under its name,
+	// a progress bar for instance. It is read on every frame of the spinner, so
+	// it has to be safe to call from another goroutine than the step itself.
+	LiveFunc func() string
+
 	NextCmd tea.Model
 }
 

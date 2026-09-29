@@ -3,14 +3,17 @@ package docker
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 
@@ -325,17 +328,55 @@ func (d *Docker) ListRunning(ctx context.Context) ([]container.Summary, error) {
 	return containers, nil
 }
 
-func (d *Docker) ImagePull(ctx context.Context, img string, pullOpts image.PullOptions) error {
+// PullProgress is how much of an image is downloaded at the moment. Docker
+// reports the size of a layer only once the layer starts arriving, so Total
+// grows while the pull is running.
+type PullProgress struct {
+	Current int64
+	Total   int64
+}
+
+// ImagePull pulls the image and reports how far it has got through progress,
+// which may be nil.
+//
+// ponytail: the sizes of the layers are known only as they come in, so the
+// share of the pull jumps every time a new layer shows up. The bar shows what
+// has actually arrived, it does not smooth it out on its own.
+func (d *Docker) ImagePull(ctx context.Context, img string, pullOpts image.PullOptions, progress func(PullProgress)) error {
 	if d.devMode {
 		return nil
 	}
 
-	_, err := d.cli.ImagePull(ctx, img, pullOpts)
+	body, err := d.cli.ImagePull(ctx, img, pullOpts)
 	if err != nil {
 		return fmt.Errorf("failed to pull image: %v", err)
 	}
+	defer body.Close()
 
-	return nil
+	stats := newPullStats()
+
+	dec := json.NewDecoder(body)
+	for {
+		var msg jsonmessage.JSONMessage
+		if err := dec.Decode(&msg); err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+
+			return fmt.Errorf("failed to read pull progress: %v", err)
+		}
+
+		if msg.Error != nil {
+			return fmt.Errorf("failed to pull image: %v", msg.Error)
+		}
+		if msg.Progress == nil {
+			continue
+		}
+
+		if progress != nil {
+			progress(stats.add(msg.ID, msg.Progress))
+		}
+	}
 }
 
 func statusToDomain(status string) domain.ContainerStateStatus {
