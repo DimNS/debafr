@@ -337,13 +337,14 @@ func (s *Summary) portsView() string {
 func splitString(s string, width int) string {
 	var result []string
 
-	for len(s) > width {
-		result = append(result, s[:width])
-		s = s[width:]
+	runes := []rune(s)
+	for len(runes) > width {
+		result = append(result, string(runes[:width]))
+		runes = runes[width:]
 	}
 
-	if len(s) > 0 {
-		result = append(result, s)
+	if len(runes) > 0 {
+		result = append(result, string(runes))
 	}
 
 	return strings.Join(result, "\n")

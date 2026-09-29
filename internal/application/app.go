@@ -32,8 +32,7 @@ type App struct {
 
 	dockerService *docker.Docker
 
-	physicalWidth  int
-	physicalHeight int
+	dic *DIC
 
 	leftStyle  lipgloss.Style
 	rightStyle lipgloss.Style
@@ -92,30 +91,19 @@ func New(appVersion string) (*App, error) {
 		AppConfig: conf.Toml.GetDomainConfig(),
 	})
 
-	return &App{
+	app := &App{
 		summary: summary,
 
 		dockerService: dockerService,
 
-		physicalWidth:  physicalWidth,
-		physicalHeight: physicalHeight,
-
-		leftStyle: lipgloss.NewStyle().
-			Width(summaryWidth).
-			Height(physicalHeight-compensationHeight).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(theme.ColorGreen).
-			Padding(0, 1),
-		rightStyle: lipgloss.NewStyle().
-			Width(physicalWidth-summaryWidth-compensationWidth).
-			Height(physicalHeight-compensationHeight).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(theme.ColorGreen).
-			Padding(0, 1),
+		dic: dic,
 
 		currentCmd: model.NewDir(dic),
 		keys:       domain.NewKeyMap(),
-	}, nil
+	}
+	app.rebuildStyles(physicalWidth, physicalHeight)
+
+	return app, nil
 }
 
 func (a *App) Init() tea.Cmd {
@@ -123,6 +111,13 @@ func (a *App) Init() tea.Cmd {
 }
 
 func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// the size has to be known before anything is rendered, so update the
+	// styles here, before the message is handed over to the current model
+	if sizeMsg, ok := msg.(tea.WindowSizeMsg); ok {
+		a.dic.SetPhysicalSize(sizeMsg.Width, sizeMsg.Height)
+		a.rebuildStyles(sizeMsg.Width, sizeMsg.Height)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
@@ -161,4 +156,22 @@ func (a *App) View() string {
 		a.leftStyle.Render(a.summary.View()),
 		a.rightStyle.Render(a.currentCmd.View()),
 	)
+}
+
+// rebuildStyles refits both panels into the given terminal size.
+func (a *App) rebuildStyles(physicalWidth, physicalHeight int) {
+	theme := a.dic.GetTheme()
+
+	a.leftStyle = lipgloss.NewStyle().
+		Width(summaryWidth).
+		Height(physicalHeight-compensationHeight).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(theme.ColorGreen).
+		Padding(0, 1)
+	a.rightStyle = lipgloss.NewStyle().
+		Width(physicalWidth-summaryWidth-compensationWidth).
+		Height(physicalHeight-compensationHeight).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(theme.ColorGreen).
+		Padding(0, 1)
 }

@@ -75,6 +75,11 @@ func (d *DIC) GetPhysicalHeight() int {
 	return d.physicalHeight
 }
 
+func (d *DIC) SetPhysicalSize(width, height int) {
+	d.physicalWidth = width
+	d.physicalHeight = height
+}
+
 func (d *DIC) GetTheme() *domain.Theme {
 	return d.theme
 }

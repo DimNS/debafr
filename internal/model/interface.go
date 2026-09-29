@@ -12,6 +12,7 @@ type DIC interface {
 
 	GetPhysicalWidth() int
 	GetPhysicalHeight() int
+	SetPhysicalSize(width, height int)
 
 	GetTheme() *domain.Theme
 
