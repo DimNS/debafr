@@ -68,10 +68,10 @@ func TestLoadConfiguration(t *testing.T) {
 						Nginx:  "/usr/sbin/nginx",
 					},
 					Timeouts: TimeoutsConfig{
-						Default: Duration(60 * time.Second),
+						Default: Duration(5 * time.Minute),
 					},
 					Healthcheck: HealthcheckConfig{
-						MaxRetries: 10,
+						MaxRetries: 30,
 						RetryDelay: Duration(5 * time.Second),
 					},
 				},
