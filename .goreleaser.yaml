@@ -19,4 +19,4 @@ builds:
 
 archives:
   - formats: [tar.gz]
-    name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}_{{.Arch}}" # debafr_v1.0.0_linux_amd64.tar.gz
+    name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}_{{.Arch}}" # debafr_1.0.0_linux_amd64.tar.gz

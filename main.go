@@ -16,11 +16,11 @@ func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "version", "--version", "-v":
-			fmt.Printf("debafr %s\n", appVersion)
+			fmt.Printf("debafr v%s\n", appVersion)
 
 			return
 		case "update":
-			if err := application.Update(appVersion); err != nil {
+			if err := application.Update("v" + appVersion); err != nil {
 				log.Fatalf("Update: %v\n", err)
 			}
 
