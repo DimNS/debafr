@@ -30,6 +30,10 @@ run:
 build:
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w -X 'main.appVersion=0.0.0'" -o debafr ./main.go
 
+.PHONY: release
+release:
+	@./scripts/release.sh $(if $(DRY_RUN),--dry-run)
+
 .PHONY: tools
 tools: deps
 	@go install -ldflags="-s -w" golang.org/x/vuln/cmd/govulncheck@latest
