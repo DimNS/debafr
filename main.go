@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -12,12 +13,19 @@ import (
 var appVersion = "0.0.0" //nolint:gochecknoglobals // все в порядке
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "update" {
-		if err := application.Update(appVersion); err != nil {
-			log.Fatalf("Update: %v\n", err)
-		}
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "version", "--version", "-v":
+			fmt.Printf("debafr %s\n", appVersion)
 
-		return
+			return
+		case "update":
+			if err := application.Update(appVersion); err != nil {
+				log.Fatalf("Update: %v\n", err)
+			}
+
+			return
+		}
 	}
 
 	app, err := application.New(appVersion)
