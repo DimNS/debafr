@@ -9,6 +9,16 @@ import (
 	"debafr/internal/domain"
 )
 
+const (
+	// pendingValue is the placeholder of everything the steps have not filled
+	// in yet, the spinner frame takes its place on the screen.
+	pendingValue = "⏳"
+
+	// labelWidth fits the longest label of the panel, so all the values line up
+	// in one column no matter which section they belong to.
+	labelWidth = 26
+)
+
 type SummaryConfig struct {
 	AppVersion string
 	DevMode    bool
@@ -63,6 +73,10 @@ type Summary struct {
 	step       int
 	totalSteps int
 
+	// pendingFrame is the current frame of the spinner, shown instead of the
+	// placeholder until the value is known.
+	pendingFrame string
+
 	styles styles
 }
 
@@ -74,8 +88,8 @@ type CurrNextPort struct {
 
 type styles struct {
 	category lipgloss.Style
-	title    lipgloss.Style
-	text     lipgloss.Style
+	label    lipgloss.Style
+	value    lipgloss.Style
 }
 
 func NewSummary(cfg SummaryConfig) *Summary {
@@ -89,26 +103,28 @@ func NewSummary(cfg SummaryConfig) *Summary {
 		dirMaxWidth: cfg.Width - marginCompensation,
 
 		projectName: cfg.ProjectName,
-		mode:        "⏳",
+		mode:        pendingValue,
 
-		requirementsCurlVersion:          "⏳",
-		requirementsDockerVersion:        "⏳",
-		requirementsDockerComposeVersion: "⏳",
-		requirementsNginxVersion:         "⏳",
+		requirementsCurlVersion:          pendingValue,
+		requirementsDockerVersion:        pendingValue,
+		requirementsDockerComposeVersion: pendingValue,
+		requirementsNginxVersion:         pendingValue,
 
 		filenameComposeBlue:  cfg.FilenameComposeBlue,
 		filenameComposeGreen: cfg.FilenameComposeGreen,
 		filenameNginxConf:    cfg.FilenameNginxConf,
 
-		currentDir: "⏳",
+		currentDir: pendingValue,
 
-		currentVersion:  "⏳",
-		currentStrategy: "⏳",
+		currentVersion:  pendingValue,
+		currentStrategy: pendingValue,
 
-		nextVersion:  "⏳",
-		nextStrategy: "⏳",
+		nextVersion:  pendingValue,
+		nextStrategy: pendingValue,
 
 		currNextPorts: nil,
+
+		pendingFrame: pendingValue,
 
 		styles: styles{
 			category: lipgloss.NewStyle().
@@ -117,13 +133,9 @@ func NewSummary(cfg SummaryConfig) *Summary {
 				Transform(strings.ToUpper).
 				MarginTop(1),
 
-			title: lipgloss.NewStyle().
-				Foreground(cfg.Theme.ColorGreen).
-				Bold(true),
+			label: cfg.Theme.StyleDim,
 
-			text: lipgloss.NewStyle().
-				Foreground(cfg.Theme.ColorYellow).
-				Bold(true),
+			value: cfg.Theme.StyleValue,
 		},
 	}
 }
@@ -141,7 +153,7 @@ func (s *Summary) View() string {
 		MarginBottom(1).
 		Render(title + " v" + version)
 
-	devModeStr := s.styles.text.Render("off")
+	devModeStr := s.value("off")
 	if s.devMode {
 		devModeStr = lipgloss.NewStyle().
 			Foreground(s.theme.ColorRed).
@@ -153,9 +165,9 @@ func (s *Summary) View() string {
 	if s.mode == domain.ModeInstall || s.mode == domain.ModeUpdate {
 		deploy = fmt.Sprintf(
 			"%s\n%s\n%s",
-			s.styles.category.Render("Deploy ("+s.nextVersion+")"),
-			s.styles.title.Render("Launching:   ")+s.boolToIcon(s.deployLaunching),
-			s.styles.title.Render("Healthcheck: ")+s.boolToIcon(s.deployHealthcheck),
+			s.styles.category.Render("Deploy ("+s.pending(s.nextVersion)+")"),
+			s.stepLine("Launching:", s.deployLaunching),
+			s.stepLine("Healthcheck:", s.deployHealthcheck),
 		)
 	}
 
@@ -165,39 +177,39 @@ func (s *Summary) View() string {
 		switchStrategy = fmt.Sprintf(
 			"%s\n%s",
 			s.styles.category.Render("Switch strategy"),
-			s.styles.title.Render("Switching - Nginx: ")+s.boolToIcon(s.switchingNginx),
+			s.stepLine("Switching - Nginx:", s.switchingNginx),
 		)
 
 		shutdown = fmt.Sprintf(
 			"%s\n%s",
-			s.styles.category.Render("Shutdown ("+s.currentVersion+")"),
-			s.styles.title.Render("Stopping the old version: ")+s.boolToIcon(s.shutdownStopping),
+			s.styles.category.Render("Shutdown ("+s.pending(s.currentVersion)+")"),
+			s.stepLine("Stopping the old version:", s.shutdownStopping),
 		)
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		header,
-		s.styles.title.Render("DevMode: ")+devModeStr,
-		s.styles.title.Render("Project: ")+s.styles.text.Render(s.projectName),
-		s.styles.title.Render("Mode:    ")+s.styles.text.Render(s.mode.String()),
+		s.label("DevMode:")+devModeStr,
+		s.label("Project:")+s.value(s.projectName),
+		s.label("Mode:")+s.value(s.mode.String()),
 
 		s.styles.category.Render("Requirements"),
-		s.styles.title.Render("curl:           ")+s.styles.text.Render(s.requirementsCurlVersion),
-		s.styles.title.Render("docker:         ")+s.styles.text.Render(s.requirementsDockerVersion),
-		s.styles.title.Render("docker compose: ")+s.styles.text.Render(s.requirementsDockerComposeVersion),
-		s.styles.title.Render("nginx:          ")+s.styles.text.Render(s.requirementsNginxVersion),
+		s.label("curl:")+s.value(s.requirementsCurlVersion),
+		s.label("docker:")+s.value(s.requirementsDockerVersion),
+		s.label("docker compose:")+s.value(s.requirementsDockerComposeVersion),
+		s.label("nginx:")+s.value(s.requirementsNginxVersion),
 
 		s.styles.category.Render("Directory"),
-		s.styles.text.Render(splitString(s.currentDir, s.dirMaxWidth)),
+		s.value(splitString(s.currentDir, s.dirMaxWidth)),
 
 		s.styles.category.Render("Files"),
-		s.styles.title.Render("compose.blue.yaml:    ")+s.styles.text.Render(s.filenameComposeBlue),
-		s.styles.title.Render("compose.green.yaml:   ")+s.styles.text.Render(s.filenameComposeGreen),
-		s.styles.title.Render("nginx.conf (symlink): ")+s.styles.text.Render(s.filenameNginxConf),
+		s.label("compose.blue.yaml:")+s.value(s.filenameComposeBlue),
+		s.label("compose.green.yaml:")+s.value(s.filenameComposeGreen),
+		s.label("nginx.conf (symlink):")+s.value(s.filenameNginxConf),
 
 		s.styles.category.Render("Deploy strategy"),
-		s.styles.title.Render("Version:  ")+s.styles.text.Render(s.currentVersion)+" >> "+s.styles.text.Render(s.nextVersion),
-		s.styles.title.Render("Strategy: ")+s.styles.text.Render(s.currentStrategy.String())+" >> "+s.styles.text.Render(s.nextStrategy.String()),
+		s.label("Version:")+s.value(s.currentVersion)+" >> "+s.value(s.nextVersion),
+		s.label("Strategy:")+s.value(s.currentStrategy.String())+" >> "+s.value(s.nextStrategy.String()),
 
 		s.portsView(),
 
@@ -323,6 +335,12 @@ func (s *Summary) GetStep() (step, total int) {
 	return s.step, s.totalSteps
 }
 
+// SetPendingFrame stores the current frame of the spinner, the summary has no
+// animation of its own and borrows the frames of the running step.
+func (s *Summary) SetPendingFrame(frame string) {
+	s.pendingFrame = frame
+}
+
 // totalSteps counts the steps of the pipeline. Both modes share the deploy
 // itself, update additionally switches the strategy and stops the old deploy,
 // which is also the only way into the VictoriaMetrics step.
@@ -343,9 +361,41 @@ func totalSteps(cfg domain.AppConfig, mode domain.Mode) int {
 	return steps
 }
 
+// label renders a label of the panel, dimmed and padded, so the values keep
+// their column.
+func (s *Summary) label(text string) string {
+	return s.styles.label.Width(labelWidth).Render(text)
+}
+
+// value renders a value of the panel, the ones not known yet show the frame of
+// the running step instead of the placeholder.
+func (s *Summary) value(text string) string {
+	return s.styles.value.Render(s.pending(text))
+}
+
+// pending swaps the placeholder for the current frame of the spinner.
+func (s *Summary) pending(text string) string {
+	if text != pendingValue {
+		return text
+	}
+
+	return s.pendingFrame
+}
+
+// stepLine renders a step of the pipeline. An untouched step is dimmed, so it
+// cannot be mistaken for the one running right now.
+func (s *Summary) stepLine(text string, done *bool) string {
+	line := s.label(text) + s.boolToIcon(done)
+	if done == nil {
+		return s.theme.StyleDim.Render(line)
+	}
+
+	return line
+}
+
 func (s *Summary) boolToIcon(b *bool) string {
 	if b == nil {
-		return s.styles.text.Render("⏳")
+		return s.pending(pendingValue)
 	}
 
 	if *b {
@@ -364,10 +414,17 @@ func (s *Summary) portsView() string {
 		s.styles.category.Render("Ports"),
 	}
 
+	// the column follows the longest location, so the ports of every app stay
+	// aligned with each other.
+	locationWidth := 0
 	for _, p := range s.currNextPorts {
-		loc := s.styles.title.Render(p.Location + ": ")
-		cp := s.styles.text.Render(p.CurrentPort)
-		np := s.styles.text.Render(p.NextPort)
+		locationWidth = max(locationWidth, lipgloss.Width(p.Location)+len(": "))
+	}
+
+	for _, p := range s.currNextPorts {
+		loc := s.styles.label.Width(locationWidth).Render(p.Location + ":")
+		cp := s.value(p.CurrentPort)
+		np := s.value(p.NextPort)
 
 		lines = append(lines,
 			loc+cp+" >> "+np,

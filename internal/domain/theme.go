@@ -12,6 +12,10 @@ type Theme struct {
 
 	StyleGreen lipgloss.Style
 	StyleRed   lipgloss.Style
+	// StyleDim mutes everything that is only a label, StyleValue is the
+	// default look of the values themselves, so the status colors stand out.
+	StyleDim   lipgloss.Style
+	StyleValue lipgloss.Style
 
 	TextPressEnterToContinue string
 }
@@ -34,6 +38,8 @@ func NewTheme() *Theme {
 
 		StyleGreen: lipgloss.NewStyle().Foreground(colorGreen),
 		StyleRed:   lipgloss.NewStyle().Foreground(colorRed),
+		StyleDim:   lipgloss.NewStyle().Foreground(colorGray),
+		StyleValue: lipgloss.NewStyle().Foreground(colorWhite),
 
 		TextPressEnterToContinue: lipgloss.NewStyle().Foreground(colorGray).Render("Press enter to continue"),
 	}
