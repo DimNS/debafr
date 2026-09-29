@@ -86,24 +86,24 @@ func NewSummary(cfg SummaryConfig) *Summary {
 		dirMaxWidth: cfg.Width - marginCompensation,
 
 		projectName: cfg.ProjectName,
-		mode:        "???",
+		mode:        "⏳",
 
-		requirementsCurlVersion:          "???",
-		requirementsDockerVersion:        "???",
-		requirementsDockerComposeVersion: "???",
-		requirementsNginxVersion:         "???",
+		requirementsCurlVersion:          "⏳",
+		requirementsDockerVersion:        "⏳",
+		requirementsDockerComposeVersion: "⏳",
+		requirementsNginxVersion:         "⏳",
 
 		filenameComposeBlue:  cfg.FilenameComposeBlue,
 		filenameComposeGreen: cfg.FilenameComposeGreen,
 		filenameNginxConf:    cfg.FilenameNginxConf,
 
-		currentDir: "???",
+		currentDir: "⏳",
 
-		currentVersion:  "???",
-		currentStrategy: "???",
+		currentVersion:  "⏳",
+		currentStrategy: "⏳",
 
-		nextVersion:  "???",
-		nextStrategy: "???",
+		nextVersion:  "⏳",
+		nextStrategy: "⏳",
 
 		currNextPorts: nil,
 
@@ -302,7 +302,7 @@ func (s *Summary) UpdateShutdownStopping(value bool) {
 
 func (s *Summary) boolToIcon(b *bool) string {
 	if b == nil {
-		return s.styles.text.Render("???")
+		return s.styles.text.Render("⏳")
 	}
 
 	if *b {
