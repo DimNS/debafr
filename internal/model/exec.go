@@ -143,8 +143,12 @@ func (c *Exec) stepsView() string {
 // elapsedView is recomputed on every spinner frame, so the step needs no timer
 // state of its own.
 func (c *Exec) elapsedView() string {
-	d := time.Since(c.startedAt).Truncate(time.Second)
+	return formatDuration(time.Since(c.startedAt))
+}
 
+// formatDuration renders a timer as m:ss, a deploy long enough to need hours is
+// rare enough to stay this simple.
+func formatDuration(d time.Duration) string {
 	return fmt.Sprintf(
 		"%d:%02d", int(d.Minutes()), int(d.Seconds())%secondsInMinute,
 	)

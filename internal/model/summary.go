@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 
@@ -73,6 +74,10 @@ type Summary struct {
 	step       int
 	totalSteps int
 
+	// startedAt is the moment the app came up, the whole deploy is the wall
+	// time from here to the final screen.
+	startedAt time.Time
+
 	// pendingFrame is the current frame of the spinner, shown instead of the
 	// placeholder until the value is known.
 	pendingFrame string
@@ -99,6 +104,8 @@ func NewSummary(cfg SummaryConfig) *Summary {
 		appVersion: cfg.AppVersion,
 		devMode:    cfg.DevMode,
 		theme:      cfg.Theme,
+
+		startedAt: time.Now(),
 
 		dirMaxWidth: cfg.Width - marginCompensation,
 
@@ -333,6 +340,13 @@ func (s *Summary) NextStep() {
 // GetStep returns the step in progress and the size of the pipeline.
 func (s *Summary) GetStep() (step, total int) {
 	return s.step, s.totalSteps
+}
+
+// GetElapsed returns the time the deploy has been running for, it is the total
+// the final screen shows. The pipeline only moves on by itself, so the wall
+// time is the time of the deploy.
+func (s *Summary) GetElapsed() time.Duration {
+	return time.Since(s.startedAt)
 }
 
 // SetPendingFrame stores the current frame of the spinner, the summary has no
