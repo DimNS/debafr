@@ -39,7 +39,7 @@ func main() {
 		log.Fatalf("New: %v\n", err)
 	}
 
-	p := tea.NewProgram(app, tea.WithAltScreen(), tea.WithMouseCellMotion())
+	p := tea.NewProgram(app, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatalf("Run: %v\n", err)
 	}

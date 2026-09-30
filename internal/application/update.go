@@ -22,7 +22,7 @@ const (
 	downloadURLTmpl     = "https://github.com/dimns/debafr/releases/download/%s/debafr_%s_%s_%s.tar.gz"
 	binaryName          = "debafr"
 
-	maxBinarySize = 256 << 20
+	maxBinarySize = 256 << 20 // 256 MiB
 	binFileMode   = 0o755
 )
 

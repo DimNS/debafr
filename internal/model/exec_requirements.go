@@ -31,7 +31,7 @@ func NewExecRequirements(dic DIC) *Exec {
 
 				curlRegex          = regexp.MustCompile(`curl (?P<version>\d+(\.\d+)*(\.\w+)*)`)
 				dockerRegex        = regexp.MustCompile(`Docker version (?P<version>\d+\.\d+\.\d+)`)
-				dockerComposeRegex = regexp.MustCompile(`Docker Compose version v(?P<version>\d+(\.\d+)*(\.\w+)*)`)
+				dockerComposeRegex = regexp.MustCompile(`Docker Compose version v?(?P<version>\d+(\.\d+)*(\.\w+)*)`)
 				nginxRegex         = regexp.MustCompile(`nginx/(?P<version>[\d\.]+)`)
 			)
 

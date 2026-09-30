@@ -84,6 +84,6 @@ func (c *Complete) View() string {
 func (c *Complete) banner() string {
 	return c.theme.StyleGreen.
 		Width(c.dic.GetPhysicalWidth() - c.dic.GetSummaryWidth() - compensationWidth).
-		Align(lipgloss.Center).
+		Align(lipgloss.Left).
 		Render("🎉 Application deployed successfully\nDeployed in " + formatDuration(c.dic.GetSummary().GetElapsed()))
 }

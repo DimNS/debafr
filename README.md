@@ -54,23 +54,23 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
    | `app.proxy_pass_prefix` | string | `"proxy_pass http://127.0.0.1:"` | ✅ Да |
    | `app.location_ports` | array of objects | `[{location="/api", blue_port="3001", green_port="3011"}, ...]` | ✅ Да |
    | `app.images` | array of string | `["ghcr.io/app/api", "ghcr.io/app/ui", ]` | ✅ Да |
-   | `app.victoriametrics.enabled` | bool | `false` | ❌ Нет |
-   | `app.victoriametrics.targets_output_file_path` | string | `""` | ❌ Нет |
-   | `app.victoriametrics.target_blue` | string | `""` | ❌ Нет |
-   | `app.victoriametrics.target_green` | string | `""` | ❌ Нет |
-   | `docker_login.enabled` | bool | `false` | ❌ Нет |
-   | `docker_login.registry` | string | `""` | ❌ Нет |
-   | `docker_login.username` | string | `""` | ❌ Нет |
-   | `docker_login.password` | string | `""` | ❌ Нет |
-   | `files.compose_blue` | string | `"compose.blue.yaml"` | ❌ Нет |
-   | `files.compose_green` | string | `"compose.green.yaml"` | ❌ Нет |
-   | `files.nginx_conf` | string | `"nginx.conf"` | ❌ Нет |
-   | `binpaths.docker` | string | `"/usr/bin/docker"` | ❌ Нет |
-   | `binpaths.curl` | string | `"/usr/bin/curl"` | ❌ Нет |
-   | `binpaths.nginx` | string | `"/usr/sbin/nginx"` | ❌ Нет |
-   | `timeouts.default` | string | `"5m"` | ❌ Нет |
-   | `healthcheck.max_retries` | integer | `30` | ❌ Нет |
-   | `healthcheck.retry_delay` | string | `"5s"` | ❌ Нет |
+   | `app.victoriametrics.enabled` | bool | `false` | Нет |
+   | `app.victoriametrics.targets_output_file_path` | string | `""` | Нет |
+   | `app.victoriametrics.target_blue` | string | `""` | Нет |
+   | `app.victoriametrics.target_green` | string | `""` | Нет |
+   | `docker_login.enabled` | bool | `false` | Нет |
+   | `docker_login.registry` | string | `""` | Нет |
+   | `docker_login.username` | string | `""` | Нет |
+   | `docker_login.password` | string | `""` | Нет |
+   | `files.compose_blue` | string | `"compose.blue.yaml"` | Нет |
+   | `files.compose_green` | string | `"compose.green.yaml"` | Нет |
+   | `files.nginx_conf` | string | `"nginx.conf"` | Нет |
+   | `binpaths.docker` | string | `"/usr/bin/docker"` | Нет |
+   | `binpaths.curl` | string | `"/usr/bin/curl"` | Нет |
+   | `binpaths.nginx` | string | `"/usr/sbin/nginx"` | Нет |
+   | `timeouts.default` | string | `"5m"` | Нет |
+   | `healthcheck.max_retries` | integer | `30` | Нет |
+   | `healthcheck.retry_delay` | string | `"5s"` | Нет |
 4. Запустите деплой
     ```bash
     debafr
