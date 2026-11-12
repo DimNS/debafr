@@ -121,7 +121,9 @@ func (d *Docker) GetCurrentDeploy(needProjectName string) (currVersion string, c
 	return currVersion, currStrategy, nil
 }
 
-func (d *Docker) GetContainers(projectName string, version string) (frontend, backend *container.Summary, err error) {
+// GetContainers returns all app containers of the deploy, whatever services
+// the project consists of.
+func (d *Docker) GetContainers(projectName string, version string) ([]container.Summary, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
@@ -129,7 +131,7 @@ func (d *Docker) GetContainers(projectName string, version string) (frontend, ba
 		All: true, // Include stopped containers too
 	})
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to list containers: %v", err)
+		return nil, fmt.Errorf("failed to list containers: %v", err)
 	}
 
 	// Остановленный контейнер прошлого деплоя с той же версией не должен
@@ -138,24 +140,29 @@ func (d *Docker) GetContainers(projectName string, version string) (frontend, ba
 		containers = running
 	}
 
+	matched := deployContainers(containers, projectName, version)
+	if len(matched) == 0 {
+		return nil, errors.New("containers not found")
+	}
+
+	return matched, nil
+}
+
+func deployContainers(containers []container.Summary, projectName, version string) []container.Summary {
+	matched := make([]container.Summary, 0, len(containers))
+
 	for _, ctr := range containers {
-		if domain.ContainerExistLabel(ctr.Labels, projectName, domain.ContainerAppServiceTypeFrontend) &&
-			domain.ContainerExistVersion(ctr.Names, version) {
-			frontend = &ctr
-		} else if domain.ContainerExistLabel(ctr.Labels, projectName, domain.ContainerAppServiceTypeBackend) &&
-			domain.ContainerExistVersion(ctr.Names, version) {
-			backend = &ctr
+		if _, ok := domain.ContainerServiceType(ctr.Labels, projectName); !ok {
+			continue
 		}
+		if !domain.ContainerExistVersion(ctr.Names, version) {
+			continue
+		}
+
+		matched = append(matched, ctr)
 	}
 
-	if frontend == nil {
-		return nil, nil, errors.New("frontend container not found")
-	}
-	if backend == nil {
-		return nil, nil, errors.New("backend container not found")
-	}
-
-	return frontend, backend, nil
+	return matched
 }
 
 // runningOnly оставляет только запущенные контейнеры.
@@ -169,32 +176,26 @@ func runningOnly(containers []container.Summary) []container.Summary {
 	return running
 }
 
-// GetContainersStatus returns a state snapshot of the frontend and backend containers of the deploy.
+// GetContainersStatus returns a state snapshot of all app containers of the deploy.
 func (d *Docker) GetContainersStatus(projectName, version string) ([]domain.ContainerStatus, error) {
-	frontend, backend, err := d.GetContainers(projectName, version)
+	containers, err := d.GetContainers(projectName, version)
 	if err != nil {
 		return nil, fmt.Errorf("get containers: %v", err)
 	}
 
-	summaries := []struct {
-		service domain.ContainerAppServiceType
-		ctr     *container.Summary
-	}{
-		{domain.ContainerAppServiceTypeFrontend, frontend},
-		{domain.ContainerAppServiceTypeBackend, backend},
-	}
+	statuses := make([]domain.ContainerStatus, 0, len(containers))
+	for _, ctr := range containers {
+		service, _ := domain.ContainerServiceType(ctr.Labels, projectName)
 
-	statuses := make([]domain.ContainerStatus, 0, len(summaries))
-	for _, s := range summaries {
-		state, err := d.GetState(s.ctr.ID)
+		state, err := d.GetState(ctr.ID)
 		if err != nil {
-			return nil, fmt.Errorf("get state of %s: %v", s.service, err)
+			return nil, fmt.Errorf("get state of %s: %v", service, err)
 		}
 
 		statuses = append(statuses, domain.ContainerStatus{
-			Service: s.service,
-			Name:    strings.TrimPrefix(strings.Join(s.ctr.Names, ","), "/"),
-			Image:   s.ctr.Image,
+			Service: service,
+			Name:    strings.TrimPrefix(strings.Join(ctr.Names, ","), "/"),
+			Image:   ctr.Image,
 			State:   state,
 		})
 	}
@@ -213,13 +214,15 @@ func (d *Docker) GetState(containerID string) (domain.ContainerState, error) {
 	if inspect.State == nil {
 		return domain.ContainerState{}, errors.New("container state is nil")
 	}
-	if inspect.State.Health == nil {
-		return domain.ContainerState{}, errors.New("container health is nil")
+
+	health := domain.ContainerStateHealthNoHealthcheck
+	if inspect.State.Health != nil {
+		health = healthToDomain(inspect.State.Health.Status)
 	}
 
 	return domain.ContainerState{
 		Status: statusToDomain(inspect.State.Status),
-		Health: healthToDomain(inspect.State.Health.Status),
+		Health: health,
 	}, nil
 }
 

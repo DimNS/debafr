@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+
 	"debafr/internal/domain"
 )
 
@@ -14,7 +16,7 @@ func NewExecStoppingCurrentDeploy(dic DIC) *Exec {
 		StartFunc: func() domain.ExecResult {
 			projectName := summary.GetProjectName()
 			currentVersion := summary.GetCurrentVersion()
-			frontend, backend, err := dockerService.GetContainers(projectName, currentVersion)
+			containers, err := dockerService.GetContainers(projectName, currentVersion)
 			if err != nil {
 				return domain.ExecResult{
 					Status: domain.ExecResultStatusError,
@@ -23,19 +25,15 @@ func NewExecStoppingCurrentDeploy(dic DIC) *Exec {
 				}
 			}
 
-			if err := dockerService.ContainerStop(frontend.ID); err != nil {
-				return domain.ExecResult{
-					Status: domain.ExecResultStatusError,
-					Err:    err,
-					Output: "failed to stop frontend container",
-				}
-			}
+			for _, ctr := range containers {
+				service, _ := domain.ContainerServiceType(ctr.Labels, projectName)
 
-			if err := dockerService.ContainerStop(backend.ID); err != nil {
-				return domain.ExecResult{
-					Status: domain.ExecResultStatusError,
-					Err:    err,
-					Output: "failed to stop backend container",
+				if err := dockerService.ContainerStop(ctr.ID); err != nil {
+					return domain.ExecResult{
+						Status: domain.ExecResultStatusError,
+						Err:    err,
+						Output: fmt.Sprintf("failed to stop %s container", service),
+					}
 				}
 			}
 

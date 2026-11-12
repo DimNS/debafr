@@ -74,6 +74,8 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
 
     `app.replacer` — необязательный массив: на каждом update в указанном файле значение текущей стратегии заменяется на значение следующей (`blue` → `green` и наоборот). Для nginx добавьте сюда `nginx.conf`: в конфиге должна быть одна активная строка `proxy_pass` на каждый location, а записи replacer'а переключают blue- и green-адреса.
 
+    Состав приложения задаётся не в `debafr.toml`, а labels в compose-файлах: `app.project.name` (совпадает с `app.project_name`), `app.version` и `app.service.type` — любое имя сервиса (`backend`, `frontend`, `worker`, ...). Сервисов может быть один, два или больше: healthcheck проверяет все, а при обновлении debafr останавливает все контейнеры прошлой версии. Контейнеры без `app.service.type` (например, база данных) считаются инфраструктурой и не затрагиваются.
+
     `nginx.test` и `nginx.reload` — массивы аргументов команды (без shell). Пустой массив пропускает команду. `nginx.enabled = false` отключает проверку версии nginx и весь шаг переключения, если nginx не используется.
 
 4. Запустите деплой

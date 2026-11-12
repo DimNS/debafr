@@ -57,15 +57,19 @@ func (v ContainerAppServiceType) String() string {
 	return string(v)
 }
 
-func ContainerExistLabel(labels map[string]string, needProjectName string, needServiceType ContainerAppServiceType) bool {
-	if len(labels) == 0 {
-		return false
+// ContainerServiceType returns the app service type of a container. Containers
+// without the label are infrastructure and are not part of the deploy.
+func ContainerServiceType(labels map[string]string, needProjectName string) (ContainerAppServiceType, bool) {
+	if len(labels) == 0 || labels["app.project.name"] != needProjectName {
+		return "", false
 	}
 
-	name, nameOK := labels["app.project.name"]
-	serviceType, serviceTypeOK := labels["app.service.type"]
+	serviceType := labels["app.service.type"]
+	if serviceType == "" {
+		return "", false
+	}
 
-	return nameOK && name == needProjectName && serviceTypeOK && serviceType == needServiceType.String()
+	return ContainerAppServiceType(serviceType), true
 }
 
 func ContainerExistVersion(names []string, version string) bool {

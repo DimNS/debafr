@@ -3,13 +3,13 @@ package model
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/docker/docker/api/types/container"
 
 	"debafr/internal/domain"
-	"debafr/internal/provider/docker"
 )
 
 func NewExecHealthcheck(dic DIC) *Exec {
@@ -23,7 +23,7 @@ func NewExecHealthcheck(dic DIC) *Exec {
 		StartFunc: func() domain.ExecResult {
 			projectName := summary.GetProjectName()
 			nextVersion := summary.GetNextVersion()
-			frontend, backend, err := dockerService.GetContainers(projectName, nextVersion)
+			containers, err := dockerService.GetContainers(projectName, nextVersion)
 			if err != nil {
 				return domain.ExecResult{
 					Status: domain.ExecResultStatusError,
@@ -32,7 +32,7 @@ func NewExecHealthcheck(dic DIC) *Exec {
 				}
 			}
 
-			return healthcheck(dockerService, frontend, backend, cfg.Healthcheck.MaxRetries, cfg.Healthcheck.RetryDelay)
+			return healthcheck(dockerService, projectName, containers, cfg.Healthcheck.MaxRetries, cfg.Healthcheck.RetryDelay)
 		},
 
 		SuccessFunc: func() {
@@ -59,62 +59,52 @@ func NewExecHealthcheck(dic DIC) *Exec {
 	})
 }
 
+// containerStateGetter is the part of the docker service the healthcheck needs.
+type containerStateGetter interface {
+	GetState(containerID string) (domain.ContainerState, error)
+}
+
 func healthcheck(
-	dockerService *docker.Docker,
-	frontend, backend *container.Summary,
+	dockerService containerStateGetter,
+	projectName string,
+	containers []container.Summary,
 	maxRetries int,
 	retryDelay time.Duration,
 ) domain.ExecResult {
 	var lastResult domain.ExecResult
 
 	for attempt := 1; attempt <= maxRetries; attempt++ {
-		frontendState, err := dockerService.GetState(frontend.ID)
-		if err != nil {
-			return domain.ExecResult{
-				Status: domain.ExecResultStatusError,
-				Err:    err,
-				Output: "failed to get frontend container state",
+		ready := true
+		var output strings.Builder
+
+		for _, ctr := range containers {
+			state, err := dockerService.GetState(ctr.ID)
+			if err != nil {
+				return domain.ExecResult{
+					Status: domain.ExecResultStatusError,
+					Err:    err,
+					Output: fmt.Sprintf("failed to get %s container state", containerService(ctr, projectName)),
+				}
 			}
+
+			if !containerReady(state) {
+				ready = false
+			}
+
+			fmt.Fprintf(&output, "### %s State: %s (%s)\n", containerService(ctr, projectName), state.Status, state.Health)
 		}
 
-		backendState, err := dockerService.GetState(backend.ID)
-		if err != nil {
-			return domain.ExecResult{
-				Status: domain.ExecResultStatusError,
-				Err:    err,
-				Output: "failed to get backend container state",
-			}
-		}
-
-		if frontendState.Status == domain.ContainerStateStatusRunning &&
-			frontendState.Health == domain.ContainerStateHealthHealthy &&
-			backendState.Status == domain.ContainerStateStatusRunning &&
-			backendState.Health == domain.ContainerStateHealthHealthy {
+		if ready {
 			return domain.ExecResult{
 				Status: domain.ExecResultStatusSuccess,
-				Err:    nil,
-				Output: fmt.Sprintf(
-					"### Frontend State: %s (%s)\n### Backend State: %s (%s)",
-					frontendState.Status,
-					frontendState.Health,
-					backendState.Status,
-					backendState.Health,
-				),
+				Output: strings.TrimSuffix(output.String(), "\n"),
 			}
 		}
 
 		lastResult = domain.ExecResult{
 			Status: domain.ExecResultStatusError,
 			Err:    errors.New("not ready"),
-			Output: fmt.Sprintf(
-				"### Frontend State: %s (%s)\n### Backend State: %s (%s)\n(attempt %d/%d)",
-				frontendState.Status,
-				frontendState.Health,
-				backendState.Status,
-				backendState.Health,
-				attempt,
-				maxRetries,
-			),
+			Output: fmt.Sprintf("%s(attempt %d/%d)", output.String(), attempt, maxRetries),
 		}
 
 		if attempt < maxRetries {
@@ -123,4 +113,21 @@ func healthcheck(
 	}
 
 	return lastResult
+}
+
+// containerReady reports whether the container is up. A container without a
+// healthcheck can only be checked by its running state.
+func containerReady(state domain.ContainerState) bool {
+	if state.Status != domain.ContainerStateStatusRunning {
+		return false
+	}
+
+	return state.Health == domain.ContainerStateHealthHealthy ||
+		state.Health == domain.ContainerStateHealthNoHealthcheck
+}
+
+func containerService(ctr container.Summary, projectName string) domain.ContainerAppServiceType {
+	service, _ := domain.ContainerServiceType(ctr.Labels, projectName)
+
+	return service
 }
