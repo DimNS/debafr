@@ -5,6 +5,7 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"debafr/internal/domain"
 )
@@ -139,6 +140,7 @@ func Test_deployContainers(t *testing.T) {
 			Labels: map[string]string{
 				"app.project.name": project,
 				"app.service.type": service,
+				"app.version":      version,
 			},
 		}
 	}
@@ -174,6 +176,31 @@ func Test_deployContainers(t *testing.T) {
 			},
 			wantIDs: []string{"api"},
 		},
+		{
+			name: "Should match by app.version label when the name has no version",
+			given: []container.Summary{{
+				ID:    "api",
+				Names: []string{"/myapp_blue"},
+				Labels: map[string]string{
+					"app.project.name": "myapp",
+					"app.service.type": "all-in-one",
+					"app.version":      "v1",
+				},
+			}},
+			wantIDs: []string{"api"},
+		},
+		{
+			name: "Should match by name when app.version label is absent",
+			given: []container.Summary{{
+				ID:    "api",
+				Names: []string{"/myapp_blue_v1"},
+				Labels: map[string]string{
+					"app.project.name": "myapp",
+					"app.service.type": "backend",
+				},
+			}},
+			wantIDs: []string{"api"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -190,4 +217,28 @@ func Test_deployContainers(t *testing.T) {
 			assert.Equal(t, tt.wantIDs, ids)
 		})
 	}
+}
+
+func Test_deployContainersPrefersRunningOnlyAmongMatched(t *testing.T) {
+	t.Parallel()
+
+	labels := map[string]string{
+		"app.project.name": "myapp",
+		"app.service.type": "backend",
+		"app.version":      "v1",
+	}
+
+	stopped := container.Summary{ID: "old", State: "exited", Labels: labels}
+	running := container.Summary{ID: "new", State: "running", Labels: labels}
+	unrelated := container.Summary{ID: "other", State: "running"}
+
+	got := deployContainers([]container.Summary{stopped, running, unrelated}, "myapp", "v1")
+
+	require.Len(t, got, 1)
+	assert.Equal(t, "new", got[0].ID)
+
+	got = deployContainers([]container.Summary{stopped, unrelated}, "myapp", "v1")
+
+	require.Len(t, got, 1)
+	assert.Equal(t, "old", got[0].ID)
 }

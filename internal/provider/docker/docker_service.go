@@ -134,12 +134,6 @@ func (d *Docker) GetContainers(projectName string, version string) ([]container.
 		return nil, fmt.Errorf("failed to list containers: %v", err)
 	}
 
-	// Остановленный контейнер прошлого деплоя с той же версией не должен
-	// перебивать работающий. Если запущенных нет, берём любые.
-	if running := runningOnly(containers); len(running) > 0 {
-		containers = running
-	}
-
 	matched := deployContainers(containers, projectName, version)
 	if len(matched) == 0 {
 		return nil, errors.New("containers not found")
@@ -155,11 +149,18 @@ func deployContainers(containers []container.Summary, projectName, version strin
 		if _, ok := domain.ContainerServiceType(ctr.Labels, projectName); !ok {
 			continue
 		}
-		if !domain.ContainerExistVersion(ctr.Names, version) {
+		if !domain.ContainerExistVersion(ctr.Labels, ctr.Names, version) {
 			continue
 		}
 
 		matched = append(matched, ctr)
+	}
+
+	// Остановленный контейнер прошлого деплоя с той же версией не должен
+	// перебивать работающий. Если запущенных нет, берём любые: healthcheck
+	// должен показать их состояние, а не «containers not found».
+	if running := runningOnly(matched); len(running) > 0 {
+		matched = running
 	}
 
 	return matched

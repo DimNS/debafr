@@ -72,11 +72,13 @@ func ContainerServiceType(labels map[string]string, needProjectName string) (Con
 	return ContainerAppServiceType(serviceType), true
 }
 
-func ContainerExistVersion(names []string, version string) bool {
-	if len(names) == 0 {
-		return false
+func ContainerExistVersion(labels map[string]string, names []string, version string) bool {
+	if v := labels["app.version"]; v != "" {
+		return v == version
 	}
 
+	// Older compose files have no app.version label, their name is the only
+	// place the version is.
 	for _, name := range names {
 		if strings.Contains(name, version) {
 			return true
