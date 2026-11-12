@@ -63,8 +63,6 @@ type Summary struct {
 	nextVersion  string
 	nextStrategy domain.Strategy
 
-	currNextPorts []CurrNextPort
-
 	deployLaunching   *bool
 	deployHealthcheck *bool
 
@@ -80,12 +78,6 @@ type Summary struct {
 	startedAt time.Time
 
 	styles styles
-}
-
-type CurrNextPort struct {
-	Location    string
-	CurrentPort string
-	NextPort    string
 }
 
 type styles struct {
@@ -125,8 +117,6 @@ func NewSummary(cfg SummaryConfig) *Summary {
 
 		nextVersion:  pendingValue,
 		nextStrategy: pendingValue,
-
-		currNextPorts: nil,
 
 		styles: styles{
 			category: lipgloss.NewStyle().
@@ -213,8 +203,6 @@ func (s *Summary) View() string {
 		s.label("Version:")+s.value(s.currentVersion)+" >> "+s.value(s.nextVersion),
 		s.label("Strategy:")+s.value(s.currentStrategy.String())+" >> "+s.value(s.nextStrategy.String()),
 
-		s.portsView(),
-
 		deploy,
 		switchStrategy,
 		shutdown,
@@ -237,10 +225,6 @@ func (s *Summary) GetDir() string {
 	return s.currentDir
 }
 
-func (s *Summary) GetFilenameNginxConf() string {
-	return s.filenameNginxConf
-}
-
 func (s *Summary) GetCurrentVersion() string {
 	return s.currentVersion
 }
@@ -251,10 +235,6 @@ func (s *Summary) GetNextVersion() string {
 
 func (s *Summary) GetNextStrategy() domain.Strategy {
 	return s.nextStrategy
-}
-
-func (s *Summary) GetPorts() []CurrNextPort {
-	return s.currNextPorts
 }
 
 func (s *Summary) UpdateDir(value string) {
@@ -295,10 +275,6 @@ func (s *Summary) UpdateNextVersion(value string) {
 
 func (s *Summary) UpdateNextStrategy(value domain.Strategy) {
 	s.nextStrategy = value
-}
-
-func (s *Summary) UpdatePorts(ports []CurrNextPort) {
-	s.currNextPorts = ports
 }
 
 func (s *Summary) UpdateDeployLaunching(value bool) {
@@ -345,11 +321,11 @@ func (s *Summary) GetElapsed() time.Duration {
 }
 
 // totalSteps counts the steps of the pipeline. Both modes share the deploy
-// itself, update additionally switches the strategy and stops the old deploy,
-// which is also the only way into the Replacer step.
+// itself; update additionally runs the Replacer, switches the strategy and
+// stops the old deploy.
 func totalSteps(cfg domain.AppConfig, mode domain.Mode) int {
 	const (
-		sharedSteps = 5 // requirements, ports, images, deploy, healthcheck
+		sharedSteps = 4 // requirements, images, deploy, healthcheck
 		updateSteps = 2 // switching strategy, stopping the current deploy
 	)
 
@@ -396,35 +372,6 @@ func (s *Summary) boolToIcon(b *bool) string {
 	}
 
 	return s.theme.StyleRed.Render("❌")
-}
-
-func (s *Summary) portsView() string {
-	if len(s.currNextPorts) == 0 {
-		return ""
-	}
-
-	lines := []string{
-		s.styles.category.Render("Ports"),
-	}
-
-	// the column follows the longest location, so the ports of every app stay
-	// aligned with each other.
-	locationWidth := 0
-	for _, p := range s.currNextPorts {
-		locationWidth = max(locationWidth, lipgloss.Width(p.Location)+len(": "))
-	}
-
-	for _, p := range s.currNextPorts {
-		loc := s.styles.label.Width(locationWidth).Render(p.Location + ":")
-		cp := s.value(p.CurrentPort)
-		np := s.value(p.NextPort)
-
-		lines = append(lines,
-			loc+cp+" >> "+np,
-		)
-	}
-
-	return strings.Join(lines, "\n")
 }
 
 func splitString(s string, width int) string {

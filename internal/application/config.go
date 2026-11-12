@@ -1,6 +1,7 @@
 package application
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -31,26 +32,27 @@ type TomlConfig struct {
 	BinPaths    BinPathsConfig    `toml:"binpaths"`
 	Timeouts    TimeoutsConfig    `toml:"timeouts"`
 	Healthcheck HealthcheckConfig `toml:"healthcheck"`
+	Nginx       NginxConfig       `toml:"nginx"`
 }
 
 type AppConfig struct {
-	ProjectName     string         `toml:"project_name"`
-	ProxyPassPrefix string         `toml:"proxy_pass_prefix"`
-	LocationPorts   []LocationPort `toml:"location_ports"`
-	Images          []string       `toml:"images"`
-	Replacer        []Replacer     `toml:"replacer"`
-}
-
-type LocationPort struct {
-	Location  string `toml:"location"`
-	BluePort  string `toml:"blue_port"`
-	GreenPort string `toml:"green_port"`
+	ProjectName string     `toml:"project_name"`
+	Images      []string   `toml:"images"`
+	Replacer    []Replacer `toml:"replacer"`
 }
 
 type Replacer struct {
 	Path  string `toml:"path"`
 	Blue  string `toml:"blue"`
 	Green string `toml:"green"`
+}
+
+// NginxConfig is optional: a nil Enabled means true. Empty command slices skip
+// that command; Enabled false skips the whole step.
+type NginxConfig struct {
+	Enabled *bool    `toml:"enabled"`
+	Test    []string `toml:"test"`
+	Reload  []string `toml:"reload"`
 }
 
 type DockerLoginConfig struct {
@@ -100,14 +102,6 @@ func (tc *TomlConfig) Validate() error {
 		return errors.New("app name is empty")
 	}
 
-	if tc.App.ProxyPassPrefix == "" {
-		return errors.New("proxy pass prefix is empty")
-	}
-
-	if len(tc.App.LocationPorts) == 0 {
-		return errors.New("location ports is empty")
-	}
-
 	if len(tc.App.Images) == 0 {
 		return errors.New("images is empty")
 	}
@@ -118,19 +112,16 @@ func (tc *TomlConfig) Validate() error {
 		}
 	}
 
+	for name, cmd := range map[string][]string{"nginx test": tc.Nginx.Test, "nginx reload": tc.Nginx.Reload} {
+		if len(cmd) > 0 && cmd[0] == "" {
+			return fmt.Errorf("%s command is empty", name)
+		}
+	}
+
 	return nil
 }
 
 func (tc *TomlConfig) GetDomainConfig() domain.AppConfig {
-	locPorts := make([]domain.AppConfigLocationPort, len(tc.App.LocationPorts))
-	for i, locPort := range tc.App.LocationPorts {
-		locPorts[i] = domain.AppConfigLocationPort{
-			Location:  locPort.Location,
-			BluePort:  locPort.BluePort,
-			GreenPort: locPort.GreenPort,
-		}
-	}
-
 	replacers := make([]domain.AppConfigReplacer, len(tc.App.Replacer))
 	for i, r := range tc.App.Replacer {
 		replacers[i] = domain.AppConfigReplacer{
@@ -140,12 +131,15 @@ func (tc *TomlConfig) GetDomainConfig() domain.AppConfig {
 		}
 	}
 
+	nginxEnabled := true
+	if tc.Nginx.Enabled != nil {
+		nginxEnabled = *tc.Nginx.Enabled
+	}
+
 	return domain.AppConfig{
-		ProjectName:     tc.App.ProjectName,
-		ProxyPassPrefix: tc.App.ProxyPassPrefix,
-		LocationPorts:   locPorts,
-		Images:          tc.App.Images,
-		Replacer:        replacers,
+		ProjectName: tc.App.ProjectName,
+		Images:      tc.App.Images,
+		Replacer:    replacers,
 		DockerLogin: domain.AppConfigDockerLogin{
 			Enabled:  tc.DockerLogin.Enabled,
 			Registry: tc.DockerLogin.Registry,
@@ -168,6 +162,11 @@ func (tc *TomlConfig) GetDomainConfig() domain.AppConfig {
 		Healthcheck: domain.AppConfigHealthcheck{
 			MaxRetries: tc.Healthcheck.MaxRetries,
 			RetryDelay: time.Duration(tc.Healthcheck.RetryDelay),
+		},
+		Nginx: domain.AppConfigNginx{
+			Enabled: nginxEnabled,
+			Test:    tc.Nginx.Test,
+			Reload:  tc.Nginx.Reload,
 		},
 	}
 }
@@ -206,7 +205,7 @@ func loadTomlConfig(name string) (TomlConfig, error) {
 		return tomlConfig, fmt.Errorf("read toml file: %w", err)
 	}
 
-	err = toml.Unmarshal(data, &tomlConfig)
+	err = toml.NewDecoder(bytes.NewReader(data)).DisallowUnknownFields().Decode(&tomlConfig)
 	if err != nil {
 		return tomlConfig, fmt.Errorf("unmarshal toml: %w", err)
 	}
@@ -229,6 +228,16 @@ func SetDefaults(cfg *TomlConfig) {
 	}
 	if cfg.BinPaths.Nginx == "" {
 		cfg.BinPaths.Nginx = "/usr/sbin/nginx"
+	}
+	if cfg.Nginx.Enabled == nil {
+		enabled := true
+		cfg.Nginx.Enabled = &enabled
+	}
+	if cfg.Nginx.Test == nil {
+		cfg.Nginx.Test = []string{cfg.BinPaths.Nginx, "-t"}
+	}
+	if cfg.Nginx.Reload == nil {
+		cfg.Nginx.Reload = []string{cfg.BinPaths.Nginx, "-s", "reload"}
 	}
 	if cfg.Timeouts.Default == 0 {
 		cfg.Timeouts.Default = Duration(defaultCmdTimeout)

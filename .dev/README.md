@@ -21,13 +21,15 @@ make dev
 
 ## Что проверяет стенд
 
-Полный цикл из 6 шагов: `Parse ports` → `Pull image` → `Deploying` → `Healthcheck` → `Switching strategy` → `Stopping current deploy`, плюс шаг `Replacer`, который переключает цель в `debafr.json` с blue на green и обратно.
+Update проходит шаги `Requirements` → `Pull image` → `Deploying` → `Healthcheck` → `Replacer` → `Switching strategy` → `Stopping current deploy`. На install шаги `Replacer` и `Switching strategy` не выполняются: новые контейнеры уже работают, а конфиг должен быть готов к первой стратегии заранее.
 
-`nginx.conf` специально содержит `/ws` на том же порту, что и `/`. Приложение переключает строки глобальной заменой и должно поменять **оба** location'а разом — если в выводе шага `Switching strategy` поменялась только одна пара строк, это регресс.
+`Replacer` меняет blue-значения на green (и наоборот) в `debafr.json` и `nginx.conf`. `Switching strategy` после этого выполняет `nginx -t` и `nginx -s reload` командами из секции `[nginx]`.
+
+`nginx.conf` специально содержит `/ws` на том же порту, что и `/`. Замена глобальная и должна поменять **оба** location'а разом — если после update один из них остался blue, это регресс.
 
 Порты: blue `3001/3002`, green `3011/3012`, внешний nginx слушает `8080`.
 
-`nginx.conf` лежит в репозитории **полностью закомментированным**, и это обязательное состояние: на install у приложения нет текущей стратегии, оно только раскомментирует следующую. Если оставить активную строку, в одном `location` окажется два `proxy_pass` и `nginx -t` упадёт.
+`nginx.conf` содержит по одной активной строке `proxy_pass` на location: приложение не комментирует и не раскомментирует варианты, а заменяет адреса целиком. Начальное состояние — blue.
 
 ## Что означают коды ответа
 
@@ -59,6 +61,6 @@ make dev-clean  # плюс образы nginx и debafr.json
 | ------------------------------------------ | -------------------------------------------------------------------- |
 | `debafr.toml`                              | конфиг приложения; читается из CWD                                   |
 | `compose.blue.yaml` / `compose.green.yaml` | фейковое приложение, два стека в одном compose-проекте `debafr`      |
-| `nginx.conf`                               | server-блок; приложение правит только строки `proxy_pass`            |
+| `nginx.conf`                               | server-блок с одним активным `proxy_pass` на location                |
 | `debafr.json`                              | файл для шага `Replacer`; `make dev` создаёт его, если его нет       |
 | `nginx.sh`                                 | подмена `nginx` через `docker exec` в контейнере `debafr_test_nginx` |

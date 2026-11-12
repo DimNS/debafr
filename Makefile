@@ -56,7 +56,7 @@ dev-clean: dev-down
 
 .PHONY: release
 release:
-	@./scripts/release.sh $(if $(DRY_RUN),--dry-run)
+	@$(HOME)/.local/bin/release.sh $(if $(DRY_RUN),--dry-run)
 
 .PHONY: tools
 tools: deps

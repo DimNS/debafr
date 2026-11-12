@@ -6,6 +6,8 @@ import (
 
 const (
 	EmptyValue = "---"
+
+	fileMode = 0644
 )
 
 type NextCmdMsg struct {

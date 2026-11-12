@@ -3,28 +3,27 @@ package domain
 import "time"
 
 type AppConfig struct {
-	ProjectName     string
-	ProxyPassPrefix string
-	LocationPorts   []AppConfigLocationPort
-	Images          []string
-	Replacer        []AppConfigReplacer
-	DockerLogin     AppConfigDockerLogin
-	Files           AppConfigFiles
-	BinPaths        AppConfigBinPaths
-	Timeouts        AppConfigTimeouts
-	Healthcheck     AppConfigHealthcheck
-}
-
-type AppConfigLocationPort struct {
-	Location  string
-	BluePort  string
-	GreenPort string
+	ProjectName string
+	Images      []string
+	Replacer    []AppConfigReplacer
+	DockerLogin AppConfigDockerLogin
+	Files       AppConfigFiles
+	BinPaths    AppConfigBinPaths
+	Timeouts    AppConfigTimeouts
+	Healthcheck AppConfigHealthcheck
+	Nginx       AppConfigNginx
 }
 
 type AppConfigReplacer struct {
 	Path  string
 	Blue  string
 	Green string
+}
+
+type AppConfigNginx struct {
+	Enabled bool
+	Test    []string
+	Reload  []string
 }
 
 type AppConfigDockerLogin struct {

@@ -1,15 +1,12 @@
 package model
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
-
 	"debafr/internal/domain"
 )
 
 func NewExecStoppingCurrentDeploy(dic DIC) *Exec {
 	summary := dic.GetSummary()
 	dockerService := dic.GetDockerService()
-	cfg := dic.GetAppConfig()
 
 	return NewExec(dic, domain.ExecConfig{
 		Name: "Stopping current deploy",
@@ -58,12 +55,6 @@ func NewExecStoppingCurrentDeploy(dic DIC) *Exec {
 
 		AutoAdvance: true,
 
-		NextCmd: func() tea.Model {
-			if len(cfg.Replacer) > 0 {
-				return NewExecReplacer(dic)
-			}
-
-			return NewComplete(dic)
-		}(),
+		NextCmd: NewComplete(dic),
 	})
 }

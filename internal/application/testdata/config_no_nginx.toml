@@ -1,0 +1,8 @@
+[app]
+project_name = "myapp"
+images = ["nginx"]
+
+[nginx]
+enabled = false
+test = []
+reload = []

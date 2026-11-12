@@ -51,8 +51,6 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
    | Параметр | Тип | Значение по умолчанию | Обязательное |
    |----------|------|------------------------|---------------|
    | `app.project_name` | string | `"myapp"` | ✅ Да |
-   | `app.proxy_pass_prefix` | string | `"proxy_pass http://127.0.0.1:"` | ✅ Да |
-   | `app.location_ports` | array of objects | `[{location="/api", blue_port="3001", green_port="3011"}, ...]` | ✅ Да |
    | `app.images` | array of string | `["ghcr.io/app/api", "ghcr.io/app/ui", ]` | ✅ Да |
    | `app.replacer[].path` | string | `""` | ✅ Да (внутри записи) |
    | `app.replacer[].blue` | string | `""` | ✅ Да (внутри записи) |
@@ -67,11 +65,16 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
    | `binpaths.docker` | string | `"/usr/bin/docker"` | Нет |
    | `binpaths.curl` | string | `"/usr/bin/curl"` | Нет |
    | `binpaths.nginx` | string | `"/usr/sbin/nginx"` | Нет |
+   | `nginx.enabled` | bool | `true` | Нет |
+   | `nginx.test` | array of string | `["/usr/sbin/nginx", "-t"]` | Нет |
+   | `nginx.reload` | array of string | `["/usr/sbin/nginx", "-s", "reload"]` | Нет |
    | `timeouts.default` | string | `"5m"` | Нет |
    | `healthcheck.max_retries` | integer | `30` | Нет |
    | `healthcheck.retry_delay` | string | `"5s"` | Нет |
 
-    `app.replacer` — необязательный массив: на каждом update в указанном файле значение текущей стратегии заменяется на значение следующей (`blue` → `green` и наоборот).
+    `app.replacer` — необязательный массив: на каждом update в указанном файле значение текущей стратегии заменяется на значение следующей (`blue` → `green` и наоборот). Для nginx добавьте сюда `nginx.conf`: в конфиге должна быть одна активная строка `proxy_pass` на каждый location, а записи replacer'а переключают blue- и green-адреса.
+
+    `nginx.test` и `nginx.reload` — массивы аргументов команды (без shell). Пустой массив пропускает команду. `nginx.enabled = false` отключает проверку версии nginx и весь шаг переключения, если nginx не используется.
 
 4. Запустите деплой
     ```bash

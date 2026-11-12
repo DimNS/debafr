@@ -8,19 +8,6 @@
 # Должно совпадать с name в compose.*.yaml и с app.project.name в их labels.
 project_name = "debafr"
 
-# Префикс, по которому приложение ищет строки для переключения в nginx.conf.
-# За ним нельзя писать этот же префикс в комментариях nginx.conf: замена
-# глобальная и сожрала бы комментарий.
-proxy_pass_prefix = "proxy_pass http://127.0.0.1:"
-
-# Порты из nginx.conf и compose.*.yaml. /ws намеренно дублирует порт /:
-# приложение должно переключить все вхождения, а не только первое.
-location_ports = [
-    {location = "/api", blue_port = "3001", green_port = "3011"},
-    {location = "/ws",  blue_port = "3002", green_port = "3012"},
-    {location = "/",    blue_port = "3002", green_port = "3012"},
-]
-
 # Фейковое приложение: один и тот же публичный образ на все сервисы.
 # Приложение дописывает ":" + введённую версию, т.е. тянется nginx:<версия>.
 # В README.md зафиксированы версии для install и update.
@@ -34,6 +21,19 @@ path = "debafr.json"
 blue = "blue_api:80"
 green = "green_api:80"
 
+# nginx.conf содержит по одной активной строке proxy_pass на location.
+# Записи ниже переключают их между blue- и green-портами. /ws и / смотрят
+# на один порт, поэтому одной пары хватает на оба location'а.
+[[app.replacer]]
+path = "nginx.conf"
+blue = "proxy_pass http://127.0.0.1:3001;"
+green = "proxy_pass http://127.0.0.1:3011;"
+
+[[app.replacer]]
+path = "nginx.conf"
+blue = "proxy_pass http://127.0.0.1:3002;"
+green = "proxy_pass http://127.0.0.1:3012;"
+
 [files]
 compose_blue = "compose.blue.yaml"
 compose_green = "compose.green.yaml"
@@ -44,4 +44,12 @@ docker = "docker"
 curl = "curl"
 
 # Системного nginx в стенде нет, вместо него обёртка над docker exec.
+# Используется для проверки версии на шаге Requirements.
 nginx = "./nginx.sh"
+
+# enabled = false отключает проверку версии и шаг Switching strategy целиком.
+# Команды задаются массивом argv, без shell.
+[nginx]
+enabled = true
+test = ["./nginx.sh", "-t"]
+reload = ["./nginx.sh", "-s", "reload"]

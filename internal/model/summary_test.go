@@ -56,9 +56,9 @@ func TestSteps(t *testing.T) {
 	t.Run("Should count the pipeline of both modes", func(t *testing.T) {
 		t.Parallel()
 
-		assert.Equal(t, 5, totalSteps(domain.AppConfig{}, domain.ModeInstall))
-		assert.Equal(t, 7, totalSteps(domain.AppConfig{}, domain.ModeUpdate))
-		assert.Equal(t, 8, totalSteps(withReplacer, domain.ModeUpdate))
+		assert.Equal(t, 4, totalSteps(domain.AppConfig{}, domain.ModeInstall))
+		assert.Equal(t, 6, totalSteps(domain.AppConfig{}, domain.ModeUpdate))
+		assert.Equal(t, 7, totalSteps(withReplacer, domain.ModeUpdate))
 	})
 
 	t.Run("Should not count the steps before the mode is chosen", func(t *testing.T) {

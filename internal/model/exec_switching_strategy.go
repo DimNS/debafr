@@ -3,23 +3,11 @@ package model
 import (
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
-	"path"
 	"strings"
 
 	"debafr/internal/domain"
 )
-
-const fileMode = 0644
-
-type switchConfig struct {
-	proxyPass string
-	filePath  string
-	ports     []CurrNextPort
-	test      func() ([]byte, error)
-	reload    func() ([]byte, error)
-}
 
 func NewExecSwitchingStrategy(dic DIC) *Exec {
 	summary := dic.GetSummary()
@@ -32,30 +20,7 @@ func NewExecSwitchingStrategy(dic DIC) *Exec {
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeouts.Default)
 			defer cancel()
 
-			cmdTest := func() ([]byte, error) {
-				return exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-t").CombinedOutput()
-			}
-			cmdReload := func() ([]byte, error) {
-				return exec.CommandContext(ctx, cfg.BinPaths.Nginx, "-s", "reload").CombinedOutput()
-			}
-			resNginx := switchNginx(switchConfig{
-				proxyPass: cfg.ProxyPassPrefix,
-				filePath:  path.Join(summary.GetDir(), summary.GetFilenameNginxConf()),
-				ports:     summary.GetPorts(),
-				test:      cmdTest,
-				reload:    cmdReload,
-			})
-			if resNginx.Status == domain.ExecResultStatusError {
-				return resNginx
-			}
-
-			return domain.ExecResult{
-				Status: domain.ExecResultStatusSuccess,
-				Output: fmt.Sprintf( //nolint:perfsprint // ignore
-					"### Switching - Nginx:\n%s",
-					resNginx.Output,
-				),
-			}
+			return runSwitching(ctx, cfg.Nginx)
 		},
 
 		SuccessFunc: func() {
@@ -72,63 +37,50 @@ func NewExecSwitchingStrategy(dic DIC) *Exec {
 	})
 }
 
-func switchNginx(cfg switchConfig) domain.ExecResult {
-	content, err := os.ReadFile(cfg.filePath)
-	if err != nil {
+// runSwitching runs the configured nginx commands in order. A command with an
+// empty argument list is skipped, so nginx is optional.
+func runSwitching(ctx context.Context, cfg domain.AppConfigNginx) domain.ExecResult {
+	if !cfg.Enabled {
 		return domain.ExecResult{
-			Status: domain.ExecResultStatusError,
-			Err:    fmt.Errorf("switchNginx: failed to read file: %v", err),
+			Status: domain.ExecResultStatusSuccess,
+			Output: "Nginx is disabled, switching skipped",
 		}
 	}
 
-	fileContent := string(content)
+	var output strings.Builder
 
-	for _, p := range cfg.ports {
-		if p.CurrentPort != EmptyValue {
-			curr := cfg.proxyPass + p.CurrentPort
-			if !strings.Contains(fileContent, "#"+curr) {
-				fileContent = strings.ReplaceAll(fileContent, curr, "#"+curr)
+	commands := []struct {
+		name string
+		args []string
+	}{
+		{"Test config", cfg.Test},
+		{"Reload", cfg.Reload},
+	}
+
+	for _, command := range commands {
+		if len(command.args) == 0 {
+			continue
+		}
+
+		out, err := exec.CommandContext(ctx, command.args[0], command.args[1:]...).CombinedOutput()
+		if len(out) > 0 {
+			fmt.Fprintf(&output, "### %s:\n%s\n", command.name, out)
+		}
+		if err != nil {
+			return domain.ExecResult{
+				Status: domain.ExecResultStatusError,
+				Err:    fmt.Errorf("%s: %w", strings.ToLower(command.name), err),
+				Output: output.String(),
 			}
 		}
-
-		next := cfg.proxyPass + p.NextPort
-		if strings.Contains(fileContent, "#"+next) {
-			fileContent = strings.ReplaceAll(fileContent, "#"+next, next)
-		}
 	}
 
-	err = os.WriteFile(cfg.filePath, []byte(fileContent), fileMode) //#nosec G306,G703 -- This is a false positive
-	if err != nil {
-		return domain.ExecResult{
-			Status: domain.ExecResultStatusError,
-			Err:    fmt.Errorf("switchNginx: failed to write file: %v", err),
-		}
-	}
-
-	outputTest, err := cfg.test()
-	if err != nil {
-		return domain.ExecResult{
-			Status: domain.ExecResultStatusError,
-			Err:    err,
-			Output: string(outputTest),
-		}
-	}
-
-	outputReload, err := cfg.reload()
-	if err != nil {
-		return domain.ExecResult{
-			Status: domain.ExecResultStatusError,
-			Err:    err,
-			Output: string(outputReload),
-		}
+	if output.Len() == 0 {
+		output.WriteString("No nginx commands configured")
 	}
 
 	return domain.ExecResult{
 		Status: domain.ExecResultStatusSuccess,
-		Output: fmt.Sprintf(
-			"### Test config:\n%s\n### Reload Nginx:\n%s",
-			string(outputTest),
-			string(outputReload),
-		),
+		Output: output.String(),
 	}
 }

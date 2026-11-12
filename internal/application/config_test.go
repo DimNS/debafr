@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLoadConfiguration(t *testing.T) {
@@ -32,26 +33,8 @@ func TestLoadConfiguration(t *testing.T) {
 					return fromEnv == "true"
 				}(),
 				Toml: TomlConfig{
-					App: AppConfig{ //nolint:gosec // ignore
-						ProjectName:     "myapp",
-						ProxyPassPrefix: "proxy_pass http://127.0.0.1:",
-						LocationPorts: []LocationPort{
-							{
-								Location:  "/api",
-								BluePort:  "3001",
-								GreenPort: "3011",
-							},
-							{
-								Location:  "/ws",
-								BluePort:  "3003",
-								GreenPort: "3013",
-							},
-							{
-								Location:  "/",
-								BluePort:  "3002",
-								GreenPort: "3012",
-							},
-						},
+					App: AppConfig{
+						ProjectName: "myapp",
 						Images: []string{
 							"ghcr.io/myapp/api",
 							"ghcr.io/myapp/ui",
@@ -74,6 +57,11 @@ func TestLoadConfiguration(t *testing.T) {
 						MaxRetries: 30,
 						RetryDelay: Duration(5 * time.Second),
 					},
+					Nginx: NginxConfig{
+						Enabled: boolPtr(true),
+						Test:    []string{"/usr/sbin/nginx", "-t"},
+						Reload:  []string{"/usr/sbin/nginx", "-s", "reload"},
+					},
 				},
 			},
 			wantErr: nil,
@@ -87,26 +75,8 @@ func TestLoadConfiguration(t *testing.T) {
 			want: &Configuration{
 				DevMode: true,
 				Toml: TomlConfig{
-					App: AppConfig{ //nolint:gosec // ignore
-						ProjectName:     "myapp",
-						ProxyPassPrefix: "proxy_pass http://127.0.0.1:",
-						LocationPorts: []LocationPort{
-							{
-								Location:  "/api",
-								BluePort:  "3001",
-								GreenPort: "3011",
-							},
-							{
-								Location:  "/ws",
-								BluePort:  "3003",
-								GreenPort: "3013",
-							},
-							{
-								Location:  "/",
-								BluePort:  "3002",
-								GreenPort: "3012",
-							},
-						},
+					App: AppConfig{
+						ProjectName: "myapp",
 						Images: []string{
 							"ghcr.io/myapp/api",
 							"ghcr.io/myapp/ui",
@@ -142,6 +112,11 @@ func TestLoadConfiguration(t *testing.T) {
 						MaxRetries: 5,
 						RetryDelay: Duration(10 * time.Second),
 					},
+					Nginx: NginxConfig{
+						Enabled: boolPtr(true),
+						Test:    []string{"nginx", "-t"},
+						Reload:  []string{"nginx", "-s", "reload"},
+					},
 				},
 			},
 			wantErr: nil,
@@ -155,4 +130,19 @@ func TestLoadConfiguration(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestLoadConfigurationWithoutNginx(t *testing.T) {
+	t.Parallel()
+
+	got, err := LoadConfiguration("testdata/config_no_nginx.toml")
+	require.NoError(t, err)
+	require.NotNil(t, got.Toml.Nginx.Enabled)
+	assert.False(t, *got.Toml.Nginx.Enabled)
+	assert.Empty(t, got.Toml.Nginx.Test)
+	assert.Empty(t, got.Toml.Nginx.Reload)
+}
+
+func boolPtr(value bool) *bool {
+	return &value
 }

@@ -45,7 +45,7 @@ func (c *CurrentDeploy) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return c, func() tea.Msg {
 			return NextCmdMsg{
-				NextCmd: NewExecPorts(c.dic),
+				NextCmd: NewNextDeploy(c.dic),
 			}
 		}
 	case StatusError:

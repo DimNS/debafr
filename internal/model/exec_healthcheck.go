@@ -47,6 +47,10 @@ func NewExecHealthcheck(dic DIC) *Exec {
 
 		NextCmd: func() tea.Model {
 			if summary.GetMode() == domain.ModeUpdate {
+				if len(cfg.Replacer) > 0 {
+					return NewExecReplacer(dic)
+				}
+
 				return NewExecSwitchingStrategy(dic)
 			}
 

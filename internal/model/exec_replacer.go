@@ -44,7 +44,7 @@ func NewExecReplacer(dic DIC) *Exec {
 
 		AutoAdvance: true,
 
-		NextCmd: NewComplete(dic),
+		NextCmd: NewExecSwitchingStrategy(dic),
 	})
 }
 
