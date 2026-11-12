@@ -51,14 +51,14 @@ func TestValues(t *testing.T) {
 func TestSteps(t *testing.T) {
 	t.Parallel()
 
-	withVM := domain.AppConfig{VictoriaMetrics: domain.AppConfigVictoriaMetrics{Enabled: true}}
+	withReplacer := domain.AppConfig{Replacer: []domain.AppConfigReplacer{{Path: "targets.json"}}}
 
 	t.Run("Should count the pipeline of both modes", func(t *testing.T) {
 		t.Parallel()
 
 		assert.Equal(t, 5, totalSteps(domain.AppConfig{}, domain.ModeInstall))
 		assert.Equal(t, 7, totalSteps(domain.AppConfig{}, domain.ModeUpdate))
-		assert.Equal(t, 8, totalSteps(withVM, domain.ModeUpdate))
+		assert.Equal(t, 8, totalSteps(withReplacer, domain.ModeUpdate))
 	})
 
 	t.Run("Should not count the steps before the mode is chosen", func(t *testing.T) {

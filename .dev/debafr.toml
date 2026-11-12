@@ -26,18 +26,13 @@ location_ports = [
 # В README.md зафиксированы версии для install и update.
 images = ["nginx"]
 
-[app.victoriametrics]
-# Шаг только пишет debafr.json с целью активной стратегии; сам VictoriaMetrics
-# не поднимается (это внешняя система, а не фича debafr, и образ весит ~100 МБ).
-# Файл удобнее смотреть глазами, чем поднимать ради стенда метрики.
-enabled = true
-
-# Путь относительно CWD, то есть попадёт в .dev/debafr.json.
-targets_output_file_path = "debafr.json"
-
-# DNS-имена сервисов внутри сети compose (name: debafr).
-target_blue = "blue_api:80"
-target_green = "green_api:80"
+# Замена значений при переключении стратегии: на каждом update значение
+# текущей стратегии в файле меняется на значение следующей (blue -> green
+# и наоборот). Файл должен существовать; `make dev` создаёт его, если нет.
+[[app.replacer]]
+path = "debafr.json"
+blue = "blue_api:80"
+green = "green_api:80"
 
 [files]
 compose_blue = "compose.blue.yaml"

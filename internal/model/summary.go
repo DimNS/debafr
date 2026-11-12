@@ -346,7 +346,7 @@ func (s *Summary) GetElapsed() time.Duration {
 
 // totalSteps counts the steps of the pipeline. Both modes share the deploy
 // itself, update additionally switches the strategy and stops the old deploy,
-// which is also the only way into the VictoriaMetrics step.
+// which is also the only way into the Replacer step.
 func totalSteps(cfg domain.AppConfig, mode domain.Mode) int {
 	const (
 		sharedSteps = 5 // requirements, ports, images, deploy, healthcheck
@@ -356,7 +356,7 @@ func totalSteps(cfg domain.AppConfig, mode domain.Mode) int {
 	steps := sharedSteps
 	if mode == domain.ModeUpdate {
 		steps += updateSteps
-		if cfg.VictoriaMetrics.Enabled {
+		if len(cfg.Replacer) > 0 {
 			steps++
 		}
 	}

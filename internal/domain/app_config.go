@@ -7,7 +7,7 @@ type AppConfig struct {
 	ProxyPassPrefix string
 	LocationPorts   []AppConfigLocationPort
 	Images          []string
-	VictoriaMetrics AppConfigVictoriaMetrics
+	Replacer        []AppConfigReplacer
 	DockerLogin     AppConfigDockerLogin
 	Files           AppConfigFiles
 	BinPaths        AppConfigBinPaths
@@ -21,11 +21,10 @@ type AppConfigLocationPort struct {
 	GreenPort string
 }
 
-type AppConfigVictoriaMetrics struct {
-	Enabled               bool
-	TargetsOutputFilePath string
-	TargetBlue            string
-	TargetGreen           string
+type AppConfigReplacer struct {
+	Path  string
+	Blue  string
+	Green string
 }
 
 type AppConfigDockerLogin struct {

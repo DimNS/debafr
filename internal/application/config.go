@@ -34,11 +34,11 @@ type TomlConfig struct {
 }
 
 type AppConfig struct {
-	ProjectName     string          `toml:"project_name"`
-	ProxyPassPrefix string          `toml:"proxy_pass_prefix"`
-	LocationPorts   []LocationPort  `toml:"location_ports"`
-	Images          []string        `toml:"images"`
-	VictoriaMetrics VictoriaMetrics `toml:"victoriametrics"`
+	ProjectName     string         `toml:"project_name"`
+	ProxyPassPrefix string         `toml:"proxy_pass_prefix"`
+	LocationPorts   []LocationPort `toml:"location_ports"`
+	Images          []string       `toml:"images"`
+	Replacer        []Replacer     `toml:"replacer"`
 }
 
 type LocationPort struct {
@@ -47,11 +47,10 @@ type LocationPort struct {
 	GreenPort string `toml:"green_port"`
 }
 
-type VictoriaMetrics struct {
-	Enabled               bool   `toml:"enabled"`
-	TargetsOutputFilePath string `toml:"targets_output_file_path"`
-	TargetBlue            string `toml:"target_blue"`
-	TargetGreen           string `toml:"target_green"`
+type Replacer struct {
+	Path  string `toml:"path"`
+	Blue  string `toml:"blue"`
+	Green string `toml:"green"`
 }
 
 type DockerLoginConfig struct {
@@ -113,6 +112,12 @@ func (tc *TomlConfig) Validate() error {
 		return errors.New("images is empty")
 	}
 
+	for _, r := range tc.App.Replacer {
+		if r.Path == "" || r.Blue == "" || r.Green == "" {
+			return errors.New("replacer path, blue and green are required")
+		}
+	}
+
 	return nil
 }
 
@@ -126,17 +131,21 @@ func (tc *TomlConfig) GetDomainConfig() domain.AppConfig {
 		}
 	}
 
+	replacers := make([]domain.AppConfigReplacer, len(tc.App.Replacer))
+	for i, r := range tc.App.Replacer {
+		replacers[i] = domain.AppConfigReplacer{
+			Path:  r.Path,
+			Blue:  r.Blue,
+			Green: r.Green,
+		}
+	}
+
 	return domain.AppConfig{
 		ProjectName:     tc.App.ProjectName,
 		ProxyPassPrefix: tc.App.ProxyPassPrefix,
 		LocationPorts:   locPorts,
 		Images:          tc.App.Images,
-		VictoriaMetrics: domain.AppConfigVictoriaMetrics{
-			Enabled:               tc.App.VictoriaMetrics.Enabled,
-			TargetsOutputFilePath: tc.App.VictoriaMetrics.TargetsOutputFilePath,
-			TargetBlue:            tc.App.VictoriaMetrics.TargetBlue,
-			TargetGreen:           tc.App.VictoriaMetrics.TargetGreen,
-		},
+		Replacer:        replacers,
 		DockerLogin: domain.AppConfigDockerLogin{
 			Enabled:  tc.DockerLogin.Enabled,
 			Registry: tc.DockerLogin.Registry,

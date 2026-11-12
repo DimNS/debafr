@@ -54,10 +54,9 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
    | `app.proxy_pass_prefix` | string | `"proxy_pass http://127.0.0.1:"` | ✅ Да |
    | `app.location_ports` | array of objects | `[{location="/api", blue_port="3001", green_port="3011"}, ...]` | ✅ Да |
    | `app.images` | array of string | `["ghcr.io/app/api", "ghcr.io/app/ui", ]` | ✅ Да |
-   | `app.victoriametrics.enabled` | bool | `false` | Нет |
-   | `app.victoriametrics.targets_output_file_path` | string | `""` | Нет |
-   | `app.victoriametrics.target_blue` | string | `""` | Нет |
-   | `app.victoriametrics.target_green` | string | `""` | Нет |
+   | `app.replacer[].path` | string | `""` | ✅ Да (внутри записи) |
+   | `app.replacer[].blue` | string | `""` | ✅ Да (внутри записи) |
+   | `app.replacer[].green` | string | `""` | ✅ Да (внутри записи) |
    | `docker_login.enabled` | bool | `false` | Нет |
    | `docker_login.registry` | string | `""` | Нет |
    | `docker_login.username` | string | `""` | Нет |
@@ -71,6 +70,9 @@ curl -LsSf https://raw.githubusercontent.com/dimns/debafr/refs/heads/master/scri
    | `timeouts.default` | string | `"5m"` | Нет |
    | `healthcheck.max_retries` | integer | `30` | Нет |
    | `healthcheck.retry_delay` | string | `"5s"` | Нет |
+
+    `app.replacer` — необязательный массив: на каждом update в указанном файле значение текущей стратегии заменяется на значение следующей (`blue` → `green` и наоборот).
+
 4. Запустите деплой
     ```bash
     debafr

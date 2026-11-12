@@ -111,11 +111,12 @@ func TestLoadConfiguration(t *testing.T) {
 							"ghcr.io/myapp/api",
 							"ghcr.io/myapp/ui",
 						},
-						VictoriaMetrics: VictoriaMetrics{
-							Enabled:               true,
-							TargetsOutputFilePath: "myapp.json",
-							TargetBlue:            "myapp_blue_api:8080",
-							TargetGreen:           "myapp_green_api:8080",
+						Replacer: []Replacer{
+							{
+								Path:  "myapp.json",
+								Blue:  "myapp_blue_api:8080",
+								Green: "myapp_green_api:8080",
+							},
 						},
 					},
 					DockerLogin: DockerLoginConfig{

@@ -24,6 +24,7 @@ test:
 
 .PHONY: dev
 dev: dev-build
+	@test -f .dev/debafr.json || echo '[{"targets":["blue_api:80"],"labels":{"project_name":"debafr"}}]' > .dev/debafr.json
 	@cd .dev && DEBAFR_DEV_MODE=true ./debafr
 
 .PHONY: dev-build

@@ -11,22 +11,12 @@ images = [
     "ghcr.io/myapp/ui",
 ]
 
-# Включение генерации targets для victoriametrics
-# после переключения сервиса
-#
-# Использование:
-# scrape_configs:
-#   - job_name: "myapp_metrics"
-#     metrics_path: /metrics
-#     file_sd_configs:
-#       - files:
-#           - "/etc/victoriametrics/targets/myapp.json"
-#         refresh_interval: 10s
-[app.victoriametrics]
-enabled = true
-targets_output_file_path = "myapp.json"
-target_blue = "myapp_blue_api:8080"
-target_green = "myapp_green_api:8080"
+# Замена значения текущей стратегии на значение следующей в произвольном
+# файле при переключении. На update blue меняется на green и наоборот.
+[[app.replacer]]
+path = "myapp.json"
+blue = "myapp_blue_api:8080"
+green = "myapp_green_api:8080"
 
 [docker_login]
 enabled = true
